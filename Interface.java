@@ -5,8 +5,8 @@ import java.util.Scanner;
 public class Interface { 
 
     String CONN_URL = "jdbc:oracle:thin:@oracle1.ensimag.fr:1521:oracle1";
-    String USER = "dubaja";
-    String PASSWD = "dubaja";
+    String USER = "zouggars";
+    String PASSWD = "zouggars";
     Connection conn;
 
 
