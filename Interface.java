@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.Scanner;
+import objets.*;
 
 
 public class Interface { 
@@ -8,7 +9,7 @@ public class Interface {
     String USER = "zouggars";
     String PASSWD = "zouggars";
     Connection conn;
-
+    int compteurIdVente;
 
 
     public Interface(){
@@ -17,14 +18,28 @@ public class Interface {
         }catch(SQLException e){
             e.printStackTrace();
         }
+        this.compteurIdVente = 0;
     }
 
+    public int getCompteurIdVente(){
+        return this.compteurIdVente;
+    }
+
+    public void setCompteurIdVente(int compteurIdVente){
+        this.compteurIdVente = compteurIdVente;
+    }
 
     public void OuvrirSalle(){
         System.out.println("De quelle catégorie sont les produits que vous aimereriez vendre dans cette salle ?");
         Scanner scan = new Scanner ( System . in );
         String categorie = scan.next ();
         scan.nextLine ();
+
+        Salle nouvelleSalle = new Salle( ,categorie);
+    }
+
+    public void CreerVente(){
+        System.out.println("");
     }
 
     public Connection connexion() throws SQLException {
