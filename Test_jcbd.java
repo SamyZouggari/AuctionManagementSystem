@@ -2,18 +2,20 @@ import java.sql.*;
 import java.util.Scanner;
 
 
+
+
 public class Test_jcbd { 
 
     static final String CONN_URL = "jdbc:oracle:thin:@oracle1.ensimag.fr:1521:oracle1";
-    static final String USER = "dubaja";
-    static final String PASSWD = "dubaja";
+    static final String USER = "duclossj";
+    static final String PASSWD = "duclossj";
 
     public static void main(String[] args){
 
         try {
 
             //Enregistrement du pilote spécifique à oracle fourni par oracle.jdbc
-            DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver ());
+            DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver ());
 
             //Lancement d'une première connexion
             System.out.println("Connecting to the database...");
@@ -21,11 +23,11 @@ public class Test_jcbd {
             System.out.println("connected.");
 
             //préparation de la requête
-            PreparedStatement statement = conn.prepareStatement(" SELECT * FROM group_members WHERE age = ? " );
+            PreparedStatement statement = conn.prepareStatement(" SELECT * FROM joueurs WHERE nom = ? " );
 
 
             //Demande de l'age
-            System.out.println("Age de la recherche ?");
+            System.out.println("Nom de la personne recherchée :");
             Scanner scan = new Scanner ( System . in );
             String age = scan.next ();
             scan.nextLine ();
@@ -52,10 +54,14 @@ public class Test_jcbd {
 
 
     public static void dumpResult(ResultSet r) throws SQLException {
+        ResultSetMetaData rsetmd = r.getMetaData();
+        int i = rsetmd.getColumnCount();
         while (r.next()) {
-            System.out.println( "age: " + r.getString(1) +
-            "- prenom: " + r.getString(2) +
-            " - " + r.getInt(3) + " frères et soeurs");
+            for (int j = 1; j <= i; j++) {
+                System.out.print(r.getString(j) + "\t");
+            }
+            System.out.println();
         }
     }
+
 }
