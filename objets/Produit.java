@@ -13,4 +13,17 @@ public class Produit {
         this.prixDeRevient = prixDeRevient;
         this.stock = stock;
     }
+    public String getCategorieProduit() {
+        return categorieProduit;
+    }
+    public int getIdProduit() {
+        return idProduit;
+    }
+    public float getPrixDeRevient() {
+        return prixDeRevient;
+    }
+
+    public int getStock() {
+        return stock;
+    }
 }
