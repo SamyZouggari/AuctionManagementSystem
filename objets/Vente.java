@@ -8,9 +8,10 @@ public class Vente {
     private boolean offreMultiple;
     private int idSalle;
     private String mailVendeur;
+    private int idProduit;
 
     // Constructeur par défaut
-    Vente(int idVente, float prixDepart, int idSalle, String mailVendeur){
+    public Vente(int idVente, float prixDepart, int idSalle, String mailVendeur, int idProduit){
         this.idVente = idVente;
         this.prixDepart = prixDepart;
         this.revocable = false;
@@ -18,10 +19,11 @@ public class Vente {
         this.offreMultiple = true;
         this.idSalle = idSalle;
         this.mailVendeur = mailVendeur;
+        this.idProduit = idProduit;
     }
 
     // Constructeur
-    Vente(int idVente, float prixDepart, boolean revocable, boolean montante, boolean offreMultiple, int idSalle, String mailVendeur){
+    public Vente(int idVente, float prixDepart, boolean revocable, boolean montante, boolean offreMultiple, int idSalle, String mailVendeur, int idProduit){
         this.idVente = idVente;
         this.prixDepart = prixDepart;
         this.revocable = revocable;
@@ -29,6 +31,7 @@ public class Vente {
         this.offreMultiple = offreMultiple;
         this.idSalle = idSalle;
         this.mailVendeur = mailVendeur;
+        this.idProduit = idProduit;
     }
 
 
