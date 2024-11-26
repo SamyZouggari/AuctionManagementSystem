@@ -184,9 +184,9 @@ public class Interface {
             System.out.println("Il y a " + stock + " " + produit + ", leur prix de revient individuel est de : " + prixDeRevient);
             System.out.println("Quelle est votre offre (en euros) ? ");
             Scanner scan = new Scanner(System.in);
-            int offre = scan.nextInt();
+            float offre = scan.nextFloat();
             if (offre > prixDeRevient) {
-                System.out.println("Enchere effectuée");
+                System.out.println("Enchère effectuée");
             }
         }
     }
