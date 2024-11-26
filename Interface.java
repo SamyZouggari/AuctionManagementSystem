@@ -238,4 +238,11 @@ public class Interface {
         statementPrix.setInt(5, quantite);
         statementPrix.executeUpdate();
     }
+
+    public void suppressionData(int idProduit) throws SQLException {
+        PreparedStatement statementProduit = conn.prepareStatement("DELETE FROM Produit WHERE idProduit = ?");
+        statementProduit.setString(1, Integer.toString(idProduit));
+        ResultSet res = statementProduit.executeQuery();
+        //System.out.println("Produit supprimé de la base de donnée");
+    }
 }
