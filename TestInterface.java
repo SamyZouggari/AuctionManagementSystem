@@ -20,6 +20,20 @@ public class TestInterface {
             Interface inter = new Interface();
             inter.header("VENTE AUX ENCHERES");
 
+            System.out.println("Appuyer sur les touches suivantes");
+
+            System.out.println("0 = Créer une salle de ventes");
+            System.out.println("1 = Créer une vente dans une salle déjà existante");
+            System.out.println("2 = Afficher la liste des produits en ventes");
+            Scanner scanner = new Scanner(System.in);
+            int num = scanner.nextInt();
+
+            /*switch(num){
+                case 0:
+                    inter.OuvrirSalle();
+                    break;
+                case 1:*/
+
             //préparation de la requête
             //PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Utilisateur WHERE NOMUSER = ?");
 
