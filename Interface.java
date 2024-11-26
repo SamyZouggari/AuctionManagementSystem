@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.util.Locale;
 import java.util.Scanner;
 import objets.*;
 import oracle.jdbc.driver.OracleDriver;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.ArrayList;
 //import java.util.Pair;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 public class Interface {
@@ -186,19 +188,20 @@ public class Interface {
             while (resOffreMax.next()) {
                 float offreMax = resOffreMax.getFloat(1);
                 int stock = res.getInt(1);
-                System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + "euros");
+                System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
                 System.out.println("Quelle est votre offre (en euros) ? ");
-                Scanner scan = new Scanner(System.in);
-                float offre = scan.nextFloat();
+                Scanner scanOffre = new Scanner(System.in);
+                float offre = scanOffre.nextFloat();
+                System.out.println("Combien voulez-vous en acheter ? ");
+                Scanner scanQuantite = new Scanner(System.in);
+                int quantite = scanQuantite.nextInt();
                 if (offre > offreMax) {
-                    //ajouteOffre(getIdProduit(produit),getEMail(produit),offre, );
+                    ajouteOffre(getIdProduit(produit), getEMail(produit), offre, quantite);
                     System.out.println("Enchère effectuée");
-                }
-                else {
+                } else {
                     System.out.println("Vous ne pouvez pas réaliser une offre inférieure au prix de la dernière offre");
                 }
             }
-
         }
     }
 
@@ -212,6 +215,10 @@ public class Interface {
         return "";
     }
 
+    public Timestamp getDateActuelle() {
+        return Timestamp.valueOf(ZonedDateTime.now().toLocalDateTime());
+    }
+
     public int getIdProduit(String produit) throws SQLException {
         PreparedStatement statementPrix = conn.prepareStatement("SELECT idProduit FROM Produit WHERE NOMPRODUIT = ?");
         statementPrix.setString(1, produit);
@@ -222,9 +229,13 @@ public class Interface {
         return -1;
     }
 
-    public void ajouteOffre(int IdVente, String eMail, float PrixAchat, ZonedDateTime DateHeureOffre, int quantite) throws SQLException {
-        PreparedStatement statementPrix = conn.prepareStatement("SELECT idProduit FROM Produit WHERE NOMPRODUIT = ?");
-        statementPrix.setString(1, produit);
-        ResultSet res = statementPrix.executeQuery();
+    public void ajouteOffre(int IdVente, String eMail, float PrixAchat, int quantite) throws SQLException {
+        PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO OFFRE VALUES(?,?,?,?,?)");
+        statementPrix.setInt(1,IdVente);
+        statementPrix.setString(2, eMail);
+        statementPrix.setFloat(3, PrixAchat);
+        statementPrix.setTimestamp(4, getDateActuelle());
+        statementPrix.setInt(5, quantite);
+        statementPrix.executeUpdate();
     }
 }
