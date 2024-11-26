@@ -7,7 +7,7 @@ import static java.lang.Float.parseFloat;
 import static java.lang.Integer.parseInt;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Pair;
+//import java.util.Pair;
 
 
 public class Interface { 
@@ -17,7 +17,7 @@ public class Interface {
     String PASSWD = "zouggars";
     Connection conn;
     int compteurIdVente;
-    ArrayList<Pair<String, String>> salles;
+    //ArrayList<Pair<String, String>> salles;
 
     int compteurIdProduit;
     String currMail;
@@ -53,7 +53,7 @@ public class Interface {
         String categorie = scan.next ();
         scan.nextLine ();
 
-        Salle nouvelleSalle = new Salle( ,categorie);
+        Salle nouvelleSalle = new Salle(categorie);
     }
 
     public void CreerVente(){
@@ -142,26 +142,53 @@ public class Interface {
     public void affichageSalles() throws SQLException{
         PreparedStatement statement1 = conn.prepareStatement(" SELECT IdSalle,NomCategorie FROM SalleDeVente LEFT JOIN Propose ON SalleDeVente.IdSalle = Propose.IdSalle" );
 
-        ResultSetMetaData res = statement1.executeQuery().getMetaData();
+        ResultSet res = statement1.executeQuery();
 
         this.header( "LISTE DES SALLES");
 
         while(res.next()){
 
             String curr_salle = res.getString(0);
-            String curr_categorie = r.getString(1);
+            String curr_categorie = res.getString(1);
 
             System.out.println("Salle n°" + curr_salle + " , Catégorie : " + curr_categorie);
 
-            this.salles.add(new Pair(curr_salle, curr_categorie));
+            //this.salles.add(new Pair(curr_salle, curr_categorie));
         }
-
-
-
-
-
     }
 
+    public boolean verifieProduit() throws SQLException {
+        System.out.println("Quel produit voulez-vous acheter ?");
+        PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM Produit WHERE NOMPRODUIT = ?");
+        Scanner scannerProduit = new Scanner(System.in);
+        String produit = scannerProduit.next();
+        statement.setString(1, produit);
+        ResultSet res = statement.executeQuery();
+        if (res.next() && res.getInt(1) > 0) {
+            System.out.println("Ce produit est disponible");
+            enchere(produit);
+            return true;
+        } else {
+            return false;
+        }
+    }
 
+    public void enchere(String produit) throws SQLException {
+        System.out.println("Bienvenue dans l'enchère du produit correspondant : "+ produit);
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT PrixDeRevient,STOCK FROM Produit WHERE NOMPRODUIT = ?");
+        statementPrix.setString(1, produit);
+        ResultSet res = statementPrix.executeQuery();
+        while(res.next()) {
+            float prixDeRevient = res.getFloat(1);
+            int stock = res.getInt(2);
+            System.out.println("Il y a " + stock + " " + produit + ", leur prix de revient individuel est de : " + prixDeRevient);
+            System.out.println("Quelle est votre offre (en euros) ? ");
+            Scanner scan = new Scanner(System.in);
+            int offre = scan.nextInt();
+            if (offre > prixDeRevient) {
+                System.out.println("Enchere effectuée");
+            }
+        }
+    }
 
 }

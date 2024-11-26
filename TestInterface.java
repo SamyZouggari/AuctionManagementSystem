@@ -1,7 +1,7 @@
 import java.sql.*;
 import java.util.Scanner;
 
-
+// Si vous lancez le test, le nom du produit c'est Manteau
 public class TestInterface {
     static final String CONN_URL = "jdbc:oracle:thin:@oracle1.ensimag.fr:1521:oracle1";
     static final String USER = "zouggars";
@@ -31,14 +31,9 @@ public class TestInterface {
 
             switch(num) {
                 case 0:
-                    System.out.println("Quelle est la catégorie de votre produit ?");
-                    PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Produit WHERE NOMCATEGORIE = ?");
-                    Scanner scannerProduit = new Scanner(System.in);
-                    String produit = scannerProduit.next();
-                    statement.setString(1,produit);
-                    ResultSet res = statement.executeQuery();
-                    Test_jcbd.dumpResult(res);
-                    if(res.)
+                    if(inter.verifieProduit()){
+                        ;
+                    }
                     break;
                 case 1:
                     System.out.println("KObz");
