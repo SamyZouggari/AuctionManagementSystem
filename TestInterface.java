@@ -22,17 +22,27 @@ public class TestInterface {
 
             System.out.println("Appuyer sur les touches suivantes");
 
-            System.out.println("0 = Créer une salle de ventes");
-            System.out.println("1 = Créer une vente dans une salle déjà existante");
-            System.out.println("2 = Afficher la liste des produits en ventes");
-            Scanner scanner = new Scanner(System.in);
-            int num = scanner.nextInt();
+            System.out.println("0 = Achat d'un produit");
+            System.out.println("1 = Vente d'un produit");
 
-            /*switch(num){
+
+            Scanner scannerNum = new Scanner(System.in);
+            int num = scannerNum.nextInt();
+
+            switch(num) {
                 case 0:
-                    inter.OuvrirSalle();
+                    System.out.println("Quelle est la catégorie de votre produit ?");
+                    PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Produit WHERE NOMCATEGORIE = ?");
+                    Scanner scannerProduit = new Scanner(System.in);
+                    String produit = scannerProduit.next();
+                    statement.setString(1,produit);
+                    ResultSet res = statement.executeQuery();
+                    Test_jcbd.dumpResult(res);
+                    if(res.)
                     break;
-                case 1:*/
+                case 1:
+                    System.out.println("KObz");
+            }
 
             //préparation de la requête
             //PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Utilisateur WHERE NOMUSER = ?");
