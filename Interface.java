@@ -159,7 +159,7 @@ public class Interface {
         }
     }
 
-    public boolean verifieProduit() throws SQLException {
+    public boolean verifieProduit(String mail) throws SQLException {
         System.out.println("Quel produit voulez-vous acheter ?");
         PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM Produit WHERE NOMPRODUIT = ?");
         Scanner scannerProduit = new Scanner(System.in);
@@ -168,14 +168,14 @@ public class Interface {
         ResultSet res = statement.executeQuery();
         if (res.next() && res.getInt(1) > 0) {
             System.out.println("Ce produit est disponible");
-            enchere(produit);
+            enchere(produit, mail);
             return true;
         } else {
             return false;
         }
     }
 
-    public void enchere(String produit) throws SQLException {
+    public void enchere(String produit, String mail) throws SQLException {
         System.out.println("----------------------------------------------------");
         System.out.println("Bienvenue dans l'enchère du produit correspondant : " + produit);
         PreparedStatement statementPrix = conn.prepareStatement("SELECT STOCK FROM Produit WHERE NOMPRODUIT = ?");
@@ -196,7 +196,7 @@ public class Interface {
                 Scanner scanQuantite = new Scanner(System.in);
                 int quantite = scanQuantite.nextInt();
                 if (offre > offreMax) {
-                    ajouteOffre(getIdProduit(produit), getEMail(produit), offre, quantite);
+                    ajouteOffre(getIdProduit(produit), mail, offre, quantite);
                     System.out.println("Enchère effectuée");
                 } else {
                     System.out.println("Vous ne pouvez pas réaliser une offre inférieure au prix de la dernière offre");

@@ -1,11 +1,14 @@
 import java.sql.*;
+import java.util.List;
 import java.util.Scanner;
 
 // Si vous lancez le test, le nom du produit c'est Manteau
+// appuyez sur l'achat psk la vente n'est pas codée encore
+// le prix de l'offre c'est un float et ça s'écrit avec une virgule pas un point
 public class TestInterface {
-    static final String CONN_URL = "jdbc:oracle:thin:@oracle1.ensimag.fr:1521:oracle1";
-    static final String USER = "zouggars";
-    static final String PASSWD = "zouggars";
+    private static final String CONN_URL = "jdbc:oracle:thin:@oracle1.ensimag.fr:1521:oracle1";
+    private static final String USER = "zouggars";
+    private static final String PASSWD = "zouggars";
 
     public static void main(String[] args) {
         try {
@@ -19,6 +22,31 @@ public class TestInterface {
 
             Interface inter = new Interface();
             inter.header("VENTE AUX ENCHERES");
+            System.out.println("Bonjour, veuillez vous identifier : ");
+            System.out.println("Adresse mail : ");
+            Scanner scannerMail = new Scanner(System.in);
+            String mail = scannerMail.nextLine();
+
+            System.out.println("Nom de famille : ");
+            Scanner scannerNom = new Scanner(System.in);
+            String nom = scannerNom.nextLine();
+
+            System.out.println("Prenom : ");
+            Scanner scannerPrenom = new Scanner(System.in);
+            String prenom = scannerPrenom.nextLine();
+
+            System.out.println("Adresse postale : ");
+            Scanner scannerAdresse = new Scanner(System.in);
+            String adresse = scannerAdresse.nextLine();
+
+            PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO UTILISATEUR VALUES(?,?,?,?)");
+            statementPrix.setString(1, mail);
+            statementPrix.setString(2, nom);
+            statementPrix.setString(3, prenom);
+            statementPrix.setString(4, adresse);
+            statementPrix.executeUpdate();
+            System.out.println("Vous avez bien été enregistré ! ");
+            System.out.println("----------------------------------------------");
 
             System.out.println("Appuyer sur les touches suivantes");
 
@@ -31,12 +59,12 @@ public class TestInterface {
 
             switch(num) {
                 case 0:
-                    if(inter.verifieProduit()){
+                    if(inter.verifieProduit(mail)){
                         ;
                     }
                     break;
                 case 1:
-                    System.out.println("KObz");
+                    break;
             }
 
             //préparation de la requête
