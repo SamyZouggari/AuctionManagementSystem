@@ -68,11 +68,10 @@ public class TestInterface {
 
             switch(num) {
                 case 0:
-                    if(inter.verifieProduit(mail)){
-                        ;
-                    }
+                    inter.process_acheteur();
                     break;
                 case 1:
+                    inter.process_vendeur();
                     break;
             }
 

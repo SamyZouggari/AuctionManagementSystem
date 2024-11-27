@@ -133,34 +133,181 @@ public class Interface {
 
 
     public void header(String titre) {
-        System.out.println("--------------------------------------------------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------------");
         System.out.println(" \t \t " + titre);
-        System.out.println("--------------------------------------------------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------------");
     }
 
+    public static void clearScreen() {  
+    System.out.print("\033[H\033[2J");  
+    System.out.flush();  
+    }
+
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //INTERFACE ACHETEUR
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public void affichageSalles() throws SQLException {
         PreparedStatement statement1 = conn.prepareStatement(" SELECT SalleDeVente.IdSalle,NomCategorie FROM SalleDeVente LEFT JOIN Propose ON SalleDeVente.IdSalle = Propose.IdSalle");
 
         ResultSet res = statement1.executeQuery();
 
+        this.clearScreen();
+
         this.header("LISTE DES SALLES");
 
         while (res.next()) {
 
-            String curr_salle = res.getString(0);
-            String curr_categorie = res.getString(1);
+            int curr_salle = res.getInt(1);
+            String curr_categorie = res.getString(2);
 
             System.out.println("Salle n°" + curr_salle + " , Catégorie : " + curr_categorie);
+
 
         }
     }
 
-    public boolean verifieProduit(String mail) throws SQLException {
+    public void affichageVentes(int IdSalle) throws SQLException {
+        PreparedStatement statement1 = conn.prepareStatement(" SELECT IdVente,NomProduit, PrixDepart FROM Vente LEFT JOIN Produit ON Vente.idProduit = Produit.idProduit WHERE IdSalle = ?");
 
+        statement1.setInt(1, IdSalle);
+
+        
+        ResultSet res = statement1.executeQuery();
+
+        this.clearScreen();
+
+        this.header("VENTES DANS LA SALLE N°" + IdSalle);
+
+        while (res.next()) {
+
+            int curr_vente = res.getInt(1);
+            String curr_nom = res.getString(2);
+
+            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
+
+            statementOffreMax.setInt(1, curr_vente);
+
+            ResultSet res2 =  statementOffreMax.executeQuery();
+
+            while(res2.next()){
+                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + res2.getString(1));
+            }
+
+
+
+        }
+    }
+
+
+
+
+
+
+
+    public void process_acheteur() throws SQLException{
         this.affichageSalles();
 
-        System.out.println(" \n \n Dans quelle salle voulez vous vous rendre ?");
+        System.out.println("\n\nDans quelle salle désirez vous vous rendre ? ");
+
+        Scanner scannerNum = new Scanner(System.in);
+        int num = scannerNum.nextInt();
+
+        this.affichageVentes(num);
+
+        System.out.println("\n\nSur quelle vente voulez-vous enchérir ?");
+
+        //Gestion de l'enchère avec le code de Samy
+    }   
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //INTERFACE VENDEUR
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public void affichageCategories() throws SQLException {
+        PreparedStatement statement1 = conn.prepareStatement(" SELECT DISTINCT NomCategorie FROM Produit");
+
+        ResultSet res = statement1.executeQuery();
+
+        this.clearScreen();
+
+        this.header("LISTE DES CATEGORIES");
+
+        while (res.next()) {
+            String curr_categorie = res.getString(1);
+
+            System.out.println("Catégorie : " + curr_categorie);
+
+
+        }
+    }
+
+    public void affichageProduits(String cat) throws SQLException {
+        PreparedStatement statement1 = conn.prepareStatement("SELECT NomProduit, Stock FROM Produit WHERE NomCategorie = ?");
+
+        statement1.setString(1, cat);
+
+        ResultSet res = statement1.executeQuery();
+        
+    
+        this.clearScreen();
+
+        this.header("LISTE DES PRODUITS");
+
+        while (res.next()) {
+            String curr_produit = res.getString(1);
+            int curr_stock = res.getInt(2);
+
+            System.out.println("Produit : " + curr_produit + " , Stock : " + curr_stock);
+        }
+
+    }
+
+
+
+
+    public void process_vendeur() throws SQLException{
+        
+        this.affichageCategories();
+
+        System.out.println("\n\n Quelle catégorie de produit désirez-vous vendre ?");
+
+        Scanner scannerNum = new Scanner(System.in);
+        String num = scannerNum.nextLine();
+
+        this.affichageProduits(num);
+
+        System.out.println("\n\n Quelle produit désirez vous vendre ?");
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public boolean verifieProduit(String mail) throws SQLException {
+
+        
 
 
         /* System.out.println("Quel produit voulez-vous acheter ?");
