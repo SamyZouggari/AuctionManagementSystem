@@ -39,14 +39,23 @@ public class TestInterface {
             Scanner scannerAdresse = new Scanner(System.in);
             String adresse = scannerAdresse.nextLine();
 
-            PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO UTILISATEUR VALUES(?,?,?,?)");
-            statementPrix.setString(1, mail);
-            statementPrix.setString(2, nom);
-            statementPrix.setString(3, prenom);
-            statementPrix.setString(4, adresse);
-            statementPrix.executeUpdate();
-            System.out.println("Vous avez bien été enregistré ! ");
-            System.out.println("----------------------------------------------");
+            PreparedStatement requestUser = conn.prepareStatement("SELECT EMAIL FROM  UTILISATEUR WHERE EMAIL = ?");
+            requestUser.setString(1, mail);
+            ResultSet rs = requestUser.executeQuery();
+            if (rs.next() && rs.getString(1).equals(mail)) {
+                System.out.println("Vous êtes connecté Mr " + prenom);
+            } else {
+                PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO UTILISATEUR VALUES(?,?,?,?)");
+                statementPrix.setString(1, mail);
+                statementPrix.setString(2, nom);
+                statementPrix.setString(3, prenom);
+                statementPrix.setString(4, adresse);
+                statementPrix.executeUpdate();
+                System.out.println("Vous avez bien été enregistré Mr " + prenom);
+                System.out.println("----------------------------------------------");
+            }
+
+
 
             System.out.println("Appuyer sur les touches suivantes");
 
