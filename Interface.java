@@ -8,7 +8,6 @@ import static java.lang.Float.parseFloat;
 import static java.lang.Integer.parseInt;
 import java.util.List;
 import java.util.ArrayList;
-//import java.util.Pair;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -20,7 +19,6 @@ public class Interface {
     String PASSWD = "zouggars";
     Connection conn;
     int compteurIdVente;
-    //ArrayList<Pair<String, String>> salles;
     int compteurIdProduit;
     String currMail;
 
@@ -55,7 +53,7 @@ public class Interface {
         String categorie = scan.next();
         scan.nextLine();
 
-        Salle nouvelleSalle = new Salle(categorie);
+        //Salle nouvelleSalle = new Salle(categorie);
     }
 
     public void CreerVente() {
@@ -142,7 +140,7 @@ public class Interface {
 
 
     public void affichageSalles() throws SQLException {
-        PreparedStatement statement1 = conn.prepareStatement(" SELECT IdSalle,NomCategorie FROM SalleDeVente LEFT JOIN Propose ON SalleDeVente.IdSalle = Propose.IdSalle");
+        PreparedStatement statement1 = conn.prepareStatement(" SELECT SalleDeVente.IdSalle,NomCategorie FROM SalleDeVente LEFT JOIN Propose ON SalleDeVente.IdSalle = Propose.IdSalle");
 
         ResultSet res = statement1.executeQuery();
 
@@ -155,12 +153,17 @@ public class Interface {
 
             System.out.println("Salle n°" + curr_salle + " , Catégorie : " + curr_categorie);
 
-            //this.salles.add(new Pair(curr_salle, curr_categorie));
         }
     }
 
     public boolean verifieProduit(String mail) throws SQLException {
-        System.out.println("Quel produit voulez-vous acheter ?");
+
+        this.affichageSalles();
+
+        System.out.println(" \n \n Dans quelle salle voulez vous vous rendre ?");
+
+
+        /* System.out.println("Quel produit voulez-vous acheter ?");
         PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM Produit WHERE NOMPRODUIT = ?");
         Scanner scannerProduit = new Scanner(System.in);
         String produit = scannerProduit.next();
@@ -172,7 +175,9 @@ public class Interface {
             return true;
         } else {
             return false;
-        }
+        } */
+
+       return true;
     }
 
     public void enchere(String produit, String mail) throws SQLException {
