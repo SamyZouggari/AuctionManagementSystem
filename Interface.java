@@ -54,11 +54,11 @@ public class Interface {
         Scanner scan = new Scanner(System.in);
         String categorie = scan.next();
         scan.nextLine();
-
-        Salle nouvelleSalle = new Salle(categorie);
+        List new_list = new ArrayList<Vente>();
+        Salle nouvelleSalle = new Salle(new_list, categorie);
     }
 
-    public void CreerVente() {
+    public void CreerVente() throws SQLException {
         int idVente = getCompteurIdVente();
         incrCompteurIdVente();
         Produit produit = CreerProduit();
@@ -94,20 +94,25 @@ public class Interface {
             multpileBool = false;
         }
         new Vente(idVente, prixDeDepart, revocableBool, montanteBool, multpileBool, idSalle, currMail, produit.getIdProduit());
-        //    public Vente(int idVente, float prixDepart, boolean revocable, boolean montante, boolean offreMultiple, int idSalle, String mailVendeur, int idProduit){
     }
 
-    public Produit CreerProduit() {
+    public Produit CreerProduit() throws SQLException {
         //renvoie l'id du produit créé
         int idProduit = getCompteurIdProduit();
         incrCompteurIdProduit();
         System.out.println("De quelle catégorie sont le/les produit(s) que vous aimereriez vendre ?");
         Scanner scan = new Scanner(System.in);
         String categorie = scan.next();
+        System.out.println("Quelle est le nom du produit que vous aimeriez vendre ?");
+        String nom_produit = scan.next();
         System.out.println("Quelle quantité de ce produit aimeriez vous vendre ? ");
         int quantite = scan.nextInt();
         System.out.println("Quelle est le prix de revient de ce produit pour vous ? ");
         Float prixDeRevient = scan.nextFloat();
+        String produit = "(" + "'"+ Integer.toString(idProduit) + "' , '" + nom_produit+ "', '" + Float.toString(prixDeRevient)+ "', '"+ Integer.toString(quantite) + "', '"+ this.currMail +"'" +")";
+        PreparedStatement statement = conn.prepareStatement("INSERT INTO Produit (idProduit, NomProduit, PrixDeRevient, Stock, NomCategorie, Email) VALUES ?;");
+        statement.setString(1, produit);
+        statement.executeQuery();
         return new Produit(categorie, idProduit, prixDeRevient, quantite);
     }
 

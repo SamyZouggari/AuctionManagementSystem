@@ -64,6 +64,7 @@ public class TestInterface {
                     }
                     break;
                 case 1:
+                    inter.CreerProduit();
                     break;
             }
 
