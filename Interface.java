@@ -8,7 +8,6 @@ import static java.lang.Float.parseFloat;
 import static java.lang.Integer.parseInt;
 import java.util.List;
 import java.util.ArrayList;
-//import java.util.Pair;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -94,6 +93,7 @@ public class Interface {
             multpileBool = false;
         }
         new Vente(idVente, prixDeDepart, revocableBool, montanteBool, multpileBool, idSalle, currMail, produit.getIdProduit());
+        //    public Vente(int idVente, float prixDepart, boolean revocable, boolean montante, boolean offreMultiple, int idSalle, String mailVendeur, int idProduit){
     }
 
     public Produit CreerProduit() throws SQLException {
@@ -147,7 +147,7 @@ public class Interface {
 
 
     public void affichageSalles() throws SQLException {
-        PreparedStatement statement1 = conn.prepareStatement(" SELECT IdSalle,NomCategorie FROM SalleDeVente LEFT JOIN Propose ON SalleDeVente.IdSalle = Propose.IdSalle");
+        PreparedStatement statement1 = conn.prepareStatement(" SELECT SalleDeVente.IdSalle,NomCategorie FROM SalleDeVente LEFT JOIN Propose ON SalleDeVente.IdSalle = Propose.IdSalle");
 
         ResultSet res = statement1.executeQuery();
 
@@ -165,7 +165,12 @@ public class Interface {
     }
 
     public boolean verifieProduit(String mail) throws SQLException {
-        System.out.println("Quel produit voulez-vous acheter ?");
+        this.affichageSalles();
+
+        System.out.println(" \n \n Dans quelle salle voulez vous vous rendre ?");
+
+
+        /* System.out.println("Quel produit voulez-vous acheter ?");
         PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM Produit WHERE NOMPRODUIT = ?");
         Scanner scannerProduit = new Scanner(System.in);
         String produit = scannerProduit.next();
@@ -177,7 +182,9 @@ public class Interface {
             return true;
         } else {
             return false;
-        }
+        } */
+
+        return true;
     }
 
     public void enchere(String produit, String mail) throws SQLException {
