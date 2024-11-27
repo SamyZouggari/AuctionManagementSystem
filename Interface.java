@@ -314,8 +314,9 @@ public class Interface {
 
         this.affichageProduits(num);
 
-        System.out.println("\n\n Quelle produit désirez vous vendre ?");
-
+        System.out.println("\n\n Quelle produit désirez vous vendre ? Entrez l'identifiant du produit.");
+        int IdProduit = scannerNum.nextInt();
+        CreerVente(IdProduit);
     }
 
 
