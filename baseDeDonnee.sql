@@ -48,8 +48,7 @@ CREATE TABLE Vente(IdVente int NOT NULL CONSTRAINT KVente primary key,
                     CONSTRAINT FKIdSalle FOREIGN KEY(IdSalle) REFERENCES SalleDeVente(IdSalle));
 
 CREATE TABLE VenteDureeLimitee(IdVente int REFERENCES Vente,
-                                DateFin DATE NOT NULL,
-                                HeureFin DATE NOT NULL);
+                                DateHeureFin TIMESTAMP NOT NULL);
 
 CREATE TABLE VenteDureeIllimitee (
     IdVente INT,
