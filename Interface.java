@@ -19,8 +19,10 @@ public class Interface {
     String PASSWD = "zouggars";
     Connection conn;
     int compteurIdVente;
+    //ArrayList<Pair<String, String>> salles;
     int compteurIdProduit;
     String currMail;
+
 
     public Interface() {
         try {
@@ -52,16 +54,15 @@ public class Interface {
         Scanner scan = new Scanner(System.in);
         String categorie = scan.next();
         scan.nextLine();
-
-        //Salle nouvelleSalle = new Salle(categorie);
+        List new_list = new ArrayList<Vente>();
+        Salle nouvelleSalle = new Salle(new_list, categorie);
     }
 
-    public void CreerVente() {
+    public void CreerVente(int idProduit) throws SQLException {
         int idVente = getCompteurIdVente();
         incrCompteurIdVente();
-        Produit produit = CreerProduit();
-        System.out.println("A quel prix de départ voulez-vous commencez cette vente ?");
         Scanner scan = new Scanner(System.in);
+        System.out.println("A quel prix de départ voulez-vous commencez cette vente ?");
         Float prixDeDepart = scan.nextFloat();
         System.out.println("Dans quel salle voulez vous vendre votre produit?");
         //affiche les salles possibles, l'utilisateur rentre un numero de salle
@@ -69,45 +70,74 @@ public class Interface {
         int idSalle = scan.nextInt();
         System.out.println("Désireriez-vous que cette vente soit révocable ou non ? Répondez par OUI ou NON.");
         String revocable = scan.nextLine();
-        boolean revocableBool = false;
+        int revocableInt = 0;
         if (revocable.equals("OUI")) {
-            revocableBool = true;
+            revocableInt = 1;
         } else if (revocable.equals("NON")) {
-            revocableBool = false;
+            revocableInt = 0;
         }
         System.out.println("Désireriez-vous que cette vente soit montante ou descendante ? Répondez par MONTANTE ou DESCENDANTE.");
         String montante = scan.nextLine();
-        boolean montanteBool = true;
+        int montanteInt = 1;
         if (montante.equals("MONTANTE")) {
-            montanteBool = true;
+            montanteInt = 1;
         } else if (revocable.equals("DESCENDANTE")) {
-            montanteBool = false;
+            montanteInt = 0;
         }
         System.out.println("Désireriez-vous que cette vente soit multiple ou non ? Répondez par OUI ou NON.");
         String multiple = scan.nextLine();
-        boolean multpileBool = true;
+        int multipleInt = 1;
         if (multiple.equals("OUI")) {
-            multpileBool = true;
+            multipleInt = 1;
         } else if (multiple.equals("NON")) {
-            multpileBool = false;
+            multipleInt = 0;
         }
-        new Vente(idVente, prixDeDepart, revocableBool, montanteBool, multpileBool, idSalle, currMail, produit.getIdProduit());
-        //    public Vente(int idVente, float prixDepart, boolean revocable, boolean montante, boolean offreMultiple, int idSalle, String mailVendeur, int idProduit){
+        System.out.println("Désireriez-vous que cette vente soit limitée ou non ? Répondez par OUI  ou NON. Si oui, entrez la date et l'heure de fin sous forme AAAA-MM-JJ.");
+        String limité = scan.nextLine();
+        int limiteInt = 1;
+        if (limité.equals("OUI")) {
+            limiteInt = 1;
+        } else if (limité.equals("NON")) {
+            limiteInt = 0;
+        }
+        PreparedStatement statement = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, DureeLimite, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?, ?, ?)");
+        statement.setInt(1, idVente);
+        statement.setFloat(2, prixDeDepart);
+        statement.setInt(3, limiteInt);
+        statement.setInt(4, revocableInt);
+        statement.setInt(5, montanteInt);
+        statement.setInt(6, multipleInt);
+        statement.setInt(7, idProduit);
+        statement.setInt(8, idSalle);
+
     }
 
-    public Produit CreerProduit() {
-        //renvoie l'id du produit créé
-        int idProduit = getCompteurIdProduit();
-        incrCompteurIdProduit();
-        System.out.println("De quelle catégorie sont le/les produit(s) que vous aimereriez vendre ?");
-        Scanner scan = new Scanner(System.in);
-        String categorie = scan.next();
-        System.out.println("Quelle quantité de ce produit aimeriez vous vendre ? ");
-        int quantite = scan.nextInt();
-        System.out.println("Quelle est le prix de revient de ce produit pour vous ? ");
-        Float prixDeRevient = scan.nextFloat();
-        return new Produit(categorie, idProduit, prixDeRevient, quantite);
-    }
+//    public Produit CreerProduit() throws SQLException {
+//        //renvoie l'id du produit créé
+//        int idProduit = getCompteurIdProduit();
+//        incrCompteurIdProduit();
+//        System.out.println("De quelle catégorie sont le/les produit(s) que vous aimereriez vendre ?");
+//        Scanner scan = new Scanner(System.in);
+//        String categorie = scan.next();
+//        System.out.println("Quelle est le nom du produit que vous aimeriez vendre ?");
+//        String nom_produit = scan.next();
+//        System.out.println("Quelle quantité de ce produit aimeriez vous vendre ? ");
+//        int quantite = scan.nextInt();
+//        System.out.println("Quelle est le prix de revient de ce produit pour vous ? ");
+//        Float prixDeRevient = scan.nextFloat();
+//        //String produit = "(" + "'"+ Integer.toString(idProduit) + "' , '" + nom_produit+ "', '" + Float.toString(prixDeRevient)+ "', '"+ Integer.toString(quantite) + "', '" +categorie+ "', '"+ this.currMail +"'" +")";
+//        //System.out.println(produit);
+//        PreparedStatement statement = conn.prepareStatement("INSERT INTO Produit (idProduit, NomProduit, PrixDeRevient, Stock, NomCategorie, Email) VALUES (?,?,?,?,?,?)");
+//        statement.setInt(1, idProduit);
+//        statement.setString(2, nom_produit);
+//        statement.setFloat(3, prixDeRevient);
+//        statement.setInt(4, quantite);
+//        statement.setString(5, categorie);
+//        statement.setString(6, this.currMail);
+//        statement.executeUpdate();
+//        statement.close();
+//        return new Produit(categorie, idProduit, prixDeRevient, quantite);
+//    }
 
     public Connection connexion() throws SQLException {
 
@@ -170,6 +200,7 @@ public class Interface {
 
         }
     }
+
 
     public void affichageVentes(int IdSalle) throws SQLException {
         PreparedStatement statement1 = conn.prepareStatement(" SELECT IdVente,NomProduit, PrixDepart FROM Vente LEFT JOIN Produit ON Vente.idProduit = Produit.idProduit WHERE IdSalle = ?");
@@ -324,7 +355,7 @@ public class Interface {
             return false;
         } */
 
-       return true;
+        return true;
     }
 
     public void enchere(String produit, String mail) throws SQLException {
@@ -365,6 +396,10 @@ public class Interface {
             return res.getString(1);
         }
         return "";
+    }
+
+    public void setEmail(String mail){
+        this.currMail = mail;
     }
 
     public Timestamp getDateActuelle() {

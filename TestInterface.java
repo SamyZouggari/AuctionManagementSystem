@@ -41,6 +41,7 @@ public class TestInterface {
 
             PreparedStatement requestUser = conn.prepareStatement("SELECT EMAIL FROM  UTILISATEUR WHERE EMAIL = ?");
             requestUser.setString(1, mail);
+            inter.setEmail(mail);
             ResultSet rs = requestUser.executeQuery();
             if (rs.next() && rs.getString(1).equals(mail)) {
                 System.out.println("Vous êtes connecté Mr " + prenom);
