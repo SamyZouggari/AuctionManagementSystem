@@ -10,6 +10,10 @@ public class Salle {
         this.categorie = categorie;
     }
 
+    public Salle(String categorie) {
+        this.categorie = categorie;
+    }
+
     public List<Vente> getListeDeVentes() {
         return listeDeVentes;
     }

@@ -359,35 +359,135 @@ public class Interface {
         return true;
     }
 
+    public boolean IsRevocable(int IdVente) throws SQLException {
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT REVOCABLE FROM VENTE WHERE IDVENTE = ?");
+        statementPrix.setInt(1, IdVente);
+        ResultSet res = statementPrix.executeQuery();
+        while(res.next()) {
+            int rev = res.getInt(1);
+            if(rev ==0 ){
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean IsMontante(int IdVente) throws SQLException {
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT MONTANTE FROM VENTE WHERE IDVENTE = ?");
+        statementPrix.setInt(1, IdVente);
+        ResultSet res = statementPrix.executeQuery();
+        while(res.next()) {
+            int montante = res.getInt(1);
+            if(montante ==0 ){
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean IsOffreMultiple(int IdVente) throws SQLException {
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT MONTANTE FROM VENTE WHERE IDVENTE = ?");
+        statementPrix.setInt(1, IdVente);
+        ResultSet res = statementPrix.executeQuery();
+        while(res.next()) {
+            int multiple = res.getInt(1);
+            if(multiple ==0 ){
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public boolean IsDureeLimitee(int IdVente) throws SQLException {
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT IDVENTE FROM VENTEDUREEILLIMITEE WHERE IDVENTE = ?");
+        statementPrix.setInt(1, IdVente);
+        ResultSet res = statementPrix.executeQuery();
+        while(res.next() && res.getInt(1) >=0 ) {
+            return true;
+        }
+        return false;
+    }
+
     public void enchere(String produit, String mail) throws SQLException {
         System.out.println("----------------------------------------------------");
         System.out.println("Bienvenue dans l'enchère du produit correspondant : " + produit);
-        PreparedStatement statementPrix = conn.prepareStatement("SELECT STOCK FROM Produit WHERE NOMPRODUIT = ?");
-        statementPrix.setString(1, produit);
-        ResultSet res = statementPrix.executeQuery();
-        while (res.next()) {
-            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
-            statementOffreMax.setString(1, "" + getIdProduit(produit));
-            ResultSet resOffreMax = statementOffreMax.executeQuery();
-            while (resOffreMax.next()) {
-                float offreMax = resOffreMax.getFloat(1);
-                int stock = res.getInt(1);
-                System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
-                System.out.println("Quelle est votre offre (en euros) ? ");
-                Scanner scanOffre = new Scanner(System.in);
-                float offre = scanOffre.nextFloat();
-                System.out.println("Combien voulez-vous en acheter ? ");
-                Scanner scanQuantite = new Scanner(System.in);
-                int quantite = scanQuantite.nextInt();
-                if (offre > offreMax) {
+        String rev;
+        String montante;
+        String lim;
+
+        if(IsMontante(getIdVente(produit))) {
+            montante = "montante";
+        }
+        else {
+            montante = "non montante";
+        }
+        if(IsDureeLimitee(getIdVente(produit))) {
+            lim = "à durée limitée";
+        }
+        else {
+            lim = "à durée illimitée";
+        }
+
+        System.out.println("La vente est "+ montante+" et "+ lim +", est-ce que cela vous convient? (oui/non) :" );
+        Scanner scanner = new Scanner(System.in);
+        String rep = scanner.next();
+        if (rep.equals("non")){
+            //
+        }
+        else {
+            PreparedStatement statementPrix = conn.prepareStatement("SELECT STOCK FROM Produit WHERE NOMPRODUIT = ?");
+            statementPrix.setString(1, produit);
+            ResultSet res = statementPrix.executeQuery();
+            while (res.next()) {
+                PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM OFFRE, VENTE WHERE OFFRE.IDVENTE=VENTE.IDVENTE GROUP BY ? ");
+                statementOffreMax.setString(1, "" + getIdProduit(produit));
+                ResultSet resOffreMax = statementOffreMax.executeQuery();
+                while (resOffreMax.next()) {
+                    float offreMax = resOffreMax.getFloat(1);
+                    int stock = res.getInt(1);
+                    System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
+                    // Vérification suivant si l'offre est montante ou pas
+
+                    System.out.println("Quelle est votre offre (en euros) ? ");
+                    Scanner scanOffre = new Scanner(System.in);
+                    float offre = scanOffre.nextFloat();
+                    if(IsMontante(getIdVente(produit))) {
+                        while( offre <= offreMax){
+                            System.out.println("L'offre est montante, vous ne pouvez pas réaliser une offre strictement supérieure au prix de la dernière offre");
+                            System.out.println("Quelle est votre offre (en euros) ? ");
+                            scanOffre = new Scanner(System.in);
+                            offre = scanOffre.nextFloat();
+                        }
+                    }
+                    else {
+                        while( offre >= offreMax){
+                            System.out.println("L'offre est descendante, vous ne pouvez pas réaliser une offre strictement inférieure au prix de la dernière offre");
+                            System.out.println("Quelle est votre offre (en euros) ? ");
+                            scanOffre = new Scanner(System.in);
+                            offre = scanOffre.nextFloat();
+                        }
+                    }
+
+                    // Vérification qu'il y a assez de produits en stock
+                    System.out.println("Combien voulez-vous en acheter ? ");
+                    Scanner scanQuantite = new Scanner(System.in);
+                    int quantite = scanQuantite.nextInt();
+                    while (quantite > stock) {
+                        System.out.println("Il n'y a pas assez de produits en stock");
+                        System.out.println("Combien voulez-vous en acheter ? ");
+                        scanQuantite = new Scanner(System.in);
+                        quantite = scanQuantite.nextInt();
+                    }
                     ajouteOffre(getIdProduit(produit), mail, offre, quantite);
                     System.out.println("Enchère effectuée");
-                } else {
-                    System.out.println("Vous ne pouvez pas réaliser une offre inférieure au prix de la dernière offre");
                 }
             }
         }
     }
+
 
     public String getEMail(String produit) throws SQLException {
         PreparedStatement statementPrix = conn.prepareStatement("SELECT Email FROM Produit WHERE NOMPRODUIT = ?");
@@ -409,6 +509,17 @@ public class Interface {
 
     public int getIdProduit(String produit) throws SQLException {
         PreparedStatement statementPrix = conn.prepareStatement("SELECT idProduit FROM Produit WHERE NOMPRODUIT = ?");
+        statementPrix.setString(1, produit);
+        ResultSet res = statementPrix.executeQuery();
+        while (res.next()) {
+            return res.getInt(1);
+        }
+        return -1;
+    }
+
+
+    public int getIdVente(String produit) throws SQLException {
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT V.IDVENTE FROM PRODUIT P,VENTE V WHERE P.IDPRODUIT = V.IDPRODUIT AND P.NOMPRODUIT = ?");
         statementPrix.setString(1, produit);
         ResultSet res = statementPrix.executeQuery();
         while (res.next()) {

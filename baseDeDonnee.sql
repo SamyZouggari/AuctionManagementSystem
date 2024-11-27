@@ -1,15 +1,14 @@
 DROP TABLE Offre;
 DROP TABLE Propose;
-DROP TABLE VenteDureeLimitee;
 DROP TABLE VenteDureeIllimitee;
+DROP TABLE VenteDureeLimitee;
 DROP TABLE Vente;
 DROP TABLE CaracteristiqueProduit;
-
--- 2. Supprimer les tables parentes (qui ne sont pas référencées après les suppressions précédentes)
-DROP TABLE SalleDeVente;
 DROP TABLE Produit;
-DROP TABLE Utilisateur;
 DROP TABLE CategorieProduit;
+DROP TABLE Utilisateur;
+DROP TABLE SalleDeVente;
+DROP TABLE DateHeureOffre;
 
 CREATE TABLE SalleDeVente(IdSalle int NOT NULL CONSTRAINT KSalle primary key);
 
@@ -38,7 +37,6 @@ CREATE TABLE CaracteristiqueProduit(NomCaracteristique varchar(100) NOT NULL CON
 
 CREATE TABLE Vente(IdVente int NOT NULL CONSTRAINT KVente primary key,
                     PrixDepart float NOT NULL CONSTRAINT PrixDepartPositif CHECK(PrixDepart>0.0),
-                    DureeLimitee int NOT NULL CONSTRAINT DureeLimTrueFalse CHECK(DureeLimitee in (0,1)),
                     Revocable int NOT NULL CONSTRAINT RevocableTrueFalse CHECK(Revocable in (0,1)),
                     Montante int NOT NULL CONSTRAINT MontanteTrueFalse CHECK(Montante in (0,1)),
                     OffreMultiple int NOT NULL CONSTRAINT OffreMultipleTrueFalse CHECK(OffreMultiple in (0,1)),
@@ -48,7 +46,10 @@ CREATE TABLE Vente(IdVente int NOT NULL CONSTRAINT KVente primary key,
                     CONSTRAINT FKIdSalle FOREIGN KEY(IdSalle) REFERENCES SalleDeVente(IdSalle));
 
 CREATE TABLE VenteDureeLimitee(IdVente int REFERENCES Vente,
-                                DateHeureFin TIMESTAMP NOT NULL);
+                                DateHeureFin TIMESTAMP NOT NULL
+                                );
+
+CREATE TABLE DateHeureOffre(DateHeure TIMESTAMP NOT NULL CONSTRAINT KDate PRIMARY KEY);
 
 CREATE TABLE VenteDureeIllimitee (
     IdVente INT,
@@ -69,12 +70,13 @@ CREATE TABLE Propose (
 CREATE TABLE Offre (
     IdVente INT NOT NULL,
     Email VARCHAR(100) NOT NULL,
-    PrixAchat float NOT NULL, 
-    DateHeureOffre TIMESTAMP NOT NULL,
-    QuantiteProduit INT NOT NULL, 
-    CONSTRAINT K_Offre PRIMARY KEY (IdVente, Email),
+    PrixAchat float NOT NULL,
+    QuantiteProduit INT NOT NULL,
+    DateHeure TIMESTAMP NOT NULL,
+    CONSTRAINT K_Offre PRIMARY KEY (IdVente, Email, DateHeure),
     CONSTRAINT F_IdVente_Offre FOREIGN KEY (IdVente) REFERENCES Vente(IdVente),
     CONSTRAINT F_Email_Offre FOREIGN KEY (Email) REFERENCES Utilisateur(Email),
+    CONSTRAINT KFDateHeure FOREIGN KEY (DateHeure) REFERENCES DateHeureOffre(DateHeure),
     CONSTRAINT chk_quantiteproduit CHECK (QuantiteProduit>=0)
 );
 
@@ -104,6 +106,8 @@ SELECT * FROM VenteDureeIllimitee;
 
 -- Sélectionner toutes les colonnes de la table Propose
 SELECT * FROM Propose;
+
+SELECT * FROM DateOffre;
 
 -- Sélectionner toutes les colonnes de la table Offre
 SELECT * FROM Offre;
