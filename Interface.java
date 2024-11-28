@@ -721,4 +721,60 @@ public class Interface {
         ResultSet res = statementProduit.executeQuery();
         //System.out.println("Produit supprimé de la base de donnée");
     }
+
+
+
+
+    public void suppressionVente(int idVente) throws SQLException {
+        PreparedStatement statementVente = conn.prepareStatement("DELETE FROM Vente WHERE idVente = ?");
+        statementVente.setInt(1, idVente);
+        ResultSet res = statementVente.executeQuery();
+    }
+
+    /*
+     * Methode pour supprimer toutes les offres qui ont ete effectuees sur un produit à partir de l'id de la vente */
+    public void suppressionAllOffres(int idVente) throws SQLException {
+        PreparedStatement statementOffre = conn.prepareStatement("DELETE FROM Offre WHERE IdVente = ?");
+        statementOffre.setString(1, Integer.toString(idVente));
+    }
+
+    /*
+     * Methode pour supprimer une offre spécifique, a partir du nom du produit et du mail de la personne
+     * ayant fait l'enchere */
+    public void suppressionOffre(String nomProduit, String mail) throws SQLException {
+        PreparedStatement statementProduit = conn.prepareStatement("SELECT v.idVente FROM Vente v, Produit p WHERE p.idProduit = v.idProduit and p.NomProduit = ?");
+        statementProduit.setString(1, nomProduit);
+        ResultSet res = statementProduit.executeQuery();
+        while (res.next()) {
+            PreparedStatement statementOffre = conn.prepareStatement("DELETE FROM Offre WHERE idVente = ? and Email = ?");
+            statementOffre.setInt(1, res.getInt(1));
+            statementOffre.setString(2, mail);
+            statementOffre.executeUpdate();
+        }
+    }
+
+    /* Methode qui va etre appelee a la fin d'une enchere pour decrementer le stock d'un produit
+    * est le supprimer si ce stock passe a 0*/
+    public void decrementationStock(int idProduit, int quantiteProduit) throws SQLException {
+        // On part du principe que l'offre s'est terminee, qu'on a deja verifie que stock > quantiteProduit
+        PreparedStatement statementStock = conn.prepareStatement("SELECT p.Stock FROM Produit p WHERE p.idProduit = ?");
+        statementStock.setInt(1,idProduit);
+        ResultSet res = statementStock.executeQuery();
+        while (res.next()) {
+            int stockRestant = res.getInt(1);
+            if (stockRestant - quantiteProduit == 0) {
+                // Si plus de stock après achat on supprime le produit de la BDD
+                PreparedStatement statementDelete = conn.prepareStatement("DELETE FROM Produit WHERE Produit.idProduit = ?");
+                statementDelete.setInt(1,idProduit);
+                statementDelete.executeUpdate();
+                conn.commit();
+            } else {
+                // Si il reste encore du stock à la fin de l'achat, on decremente simplement le stock
+                PreparedStatement statementAlter = conn.prepareStatement("UPDATE Produit SET Stock = ? WHERE Produit.idProduit = ?");
+                statementAlter.setInt(1,stockRestant);
+                statementAlter.setInt(2,idProduit);
+                conn.commit();
+            }
+        }
+    }
 }
