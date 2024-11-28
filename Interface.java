@@ -1,4 +1,6 @@
 import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import objets.*;
@@ -148,35 +150,41 @@ public class Interface {
         System.out.println("\n"+ "Voici les salles dans lesquelles vous pouvez vendre votre produit. Entrez l'ID de la salle dans laquelle vous souhaitez vendre votre produit.");
         //affiche les salles possibles, l'utilisateur rentre un numero de salle
         //besoin d'ajouter la verification que la salle choisie ait la même catégorie que le produit
-
         int idSalle = scan.nextInt();
-        scan.nextLine();
+        System.out.println("Combien voulez-vous en vendre ?");
+        int quantite = scan.nextInt();
         System.out.println("Désireriez-vous que cette vente soit révocable ou non ? Répondez par OUI ou NON.");
-        String revocable = scan.nextLine();
+        Scanner scanRev = new Scanner(System.in);
+        String revocable = scanRev.nextLine();
         int revocableInt = 0;
         if (revocable.equals("OUI")) {
             revocableInt = 1;
-        } else if (revocable.equals("NON")) {
-            revocableInt = 0;
+        }
+        else if (revocable.equals("NON")) {
+            revocableInt = 1;
         }
         System.out.println("Désireriez-vous que cette vente soit montante ou descendante ? Répondez par MONTANTE ou DESCENDANTE.");
-        String montante = scan.nextLine();
+        Scanner scanMon = new Scanner(System.in);
+        String montante = scanMon.nextLine();
         int montanteInt = 1;
         if (montante.equals("MONTANTE")) {
             montanteInt = 1;
-        } else if (revocable.equals("DESCENDANTE")) {
+        } else if (montante.equals("DESCENDANTE")) {
             montanteInt = 0;
         }
-        System.out.println("Désireriez-vous que cette vente soit multiple ou non ? Répondez par OUI ou NON.");
-        String multiple = scan.nextLine();
+        System.out.println("Désireriez-vous que cette vente soit à offres multiples ou non ? Répondez par OUI ou NON.");
+        Scanner scanMult = new Scanner(System.in);
+        String multiple = scanMult.nextLine();
+        scan.nextLine();
         int multipleInt = 1;
         if (multiple.equals("OUI")) {
             multipleInt = 1;
         } else if (multiple.equals("NON")) {
             multipleInt = 0;
         }
-        System.out.println("Désireriez-vous que cette vente soit limitée ou non ? Répondez par OUI  ou NON. ");
-        String limité = scan.nextLine();
+        System.out.println("Désireriez-vous que cette vente soit à durée limitée ou non ? Répondez par OUI  ou NON. ");
+        Scanner scanLim = new Scanner(System.in);
+        String limité = scanLim.nextLine();
         PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?, ?)");
         statement1.setInt(1, idVente);
         statement1.setFloat(2, prixDeDepart);
@@ -187,7 +195,7 @@ public class Interface {
         statement1.setInt(7, idSalle);
         statement1.executeUpdate();
         if (limité.equals("OUI")) {
-            System.out.println("Si oui, entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");
+            System.out.println("Entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");
             Scanner scan6 = new Scanner(System.in);
             String DateHeureFin = scan6.nextLine();
             System.out.println(DateHeureFin);
@@ -202,7 +210,7 @@ public class Interface {
             statement.setInt(2, delai);
             statement.executeUpdate();
         }
-
+        incrementeStock(idProduit, quantite);
     }
 
 //    public Produit CreerProduit() throws SQLException {
@@ -310,7 +318,15 @@ public class Interface {
         if (dateHeure == null) {
             throw new IllegalArgumentException("La date ne peut pas être null");
         }
-        return dateHeure;
+        // Créer une instance de Calendar et définir la date initiale
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(dateHeure);
+
+        // Ajouter le délai en minutes
+        cal.add(Calendar.MINUTE, delai);
+
+        // Retourner le nouveau Timestamp
+        return new Timestamp(cal.getTimeInMillis());
     }
 
     public void affichageSalles(String categorie) throws SQLException {
@@ -338,7 +354,7 @@ public class Interface {
 
 
     public void affichageVentes(int IdSalle) throws SQLException {
-        // a durée limitée
+        // À durée limitée
         PreparedStatement statement1 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vd.DateHeureFin FROM Vente v JOIN VenteDureeLimitee vd on v.idvente = vd.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
         statement1.setInt(1, IdSalle);
         ResultSet res = statement1.executeQuery();
@@ -346,7 +362,6 @@ public class Interface {
         this.clearScreen();
 
         this.header("VENTES DANS LA SALLE N°" + IdSalle);
-        System.out.println("Ventes à durée limitée : ");
         while (res.next()) {
 
             int curr_vente = res.getInt(1);
@@ -365,13 +380,13 @@ public class Interface {
                 if(prix == 0.0){
                     prix = res.getFloat(3);
                 }
-                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ ". Date de fin de vente : "+ dateFin);
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateFinSansMilli = formatter.format(dateFin);
+                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ " €. Date de fin de vente : "+ dateFinSansMilli);
             }
         }
 
-        // A durée illimitée
-        System.out.println("----------------------------------------------");
-        System.out.println("Ventes à durée illimitée : ");
+        // À durée illimitée
         PreparedStatement statement2 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vi.delai FROM Vente v JOIN VenteDureeIllimitee vi on v.idvente = vi.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
         statement2.setInt(1, IdSalle);
         ResultSet res2 = statement2.executeQuery();
@@ -381,20 +396,24 @@ public class Interface {
             int curr_vente = res2.getInt(1);
             String curr_nom = res2.getString(2);
             int delai = res2.getInt(4);
-            Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(curr_vente);
-            Timestamp dateFin = ajouteDelai(DateHeureDerniereOffre, delai);
-
             PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
 
             statementOffreMax.setInt(1, curr_vente);
 
             ResultSet res3 =  statementOffreMax.executeQuery();
             while(res3.next()){
+                Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(curr_vente);
+                if(DateHeureDerniereOffre == null){
+                    DateHeureDerniereOffre = getDateActuelle();
+                }
+                Timestamp dateFin = ajouteDelai(DateHeureDerniereOffre, delai);
                 float prix = res2.getFloat(1);
                 if(prix == 0.0){
                     prix = res2.getFloat(3);
                 }
-                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ ". Date de fin de vente : "+ dateFin);
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateFinSansMilli = formatter.format(dateFin);
+                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ " €. Date de fin de vente : "+ dateFinSansMilli);
             }
         }
     }
@@ -583,14 +602,8 @@ public class Interface {
         else {
             montante = "non montante";
         }
-        if(IsDureeLimitee(getIdVente(produit))) {
-            lim = "à durée limitée";
-        }
-        else {
-            lim = "à durée illimitée";
-        }
 
-        System.out.println("La vente est "+ montante+" et "+ lim +", est-ce que cela vous convient? (oui/non) :" );
+        System.out.println("La vente est "+ montante+", est-ce que cela vous convient? (oui/non) :" );
         Scanner scanner = new Scanner(System.in);
         String rep = scanner.next();
         if (rep.equals("non")){
@@ -753,6 +766,23 @@ public class Interface {
         }
     }
 
+    /*On va l'appeler quand qqn met en vente un produit */
+    public void incrementeStock(int idp, int quantite) throws SQLException {
+        PreparedStatement statementStock = conn.prepareStatement("SELECT Stock FROM Produit WHERE IDPRODUIT = ?");
+        statementStock.setInt(1, idp);
+        ResultSet res = statementStock.executeQuery();
+        int stock=0;
+
+        if (res.next()) {
+            stock = res.getInt(1);
+        }
+
+        PreparedStatement incr = conn.prepareStatement("UPDATE Produit SET Stock = ? WHERE IDPRODUIT = ?");
+        incr.setInt(1, quantite+stock);
+        incr.setInt(2, idp);
+        incr.executeQuery();
+    }
+
     /* Methode qui va etre appelee a la fin d'une enchere pour decrementer le stock d'un produit
     * est le supprimer si ce stock passe a 0*/
     public void decrementationStock(int idProduit, int quantiteProduit) throws SQLException {
@@ -780,8 +810,8 @@ public class Interface {
 
     /* Méthode qui va être appelée à chaque connection, et qui va verifier si des ventes se sont
     * terminées depuis la dernière connection, et en fonction va supprimer ces ventes, offres associées
-    * et les produits vendues.
-    * Attention si la vente était révocable et que le prix d'achat de la dernière offre est ingérieur
+    * et les produits vendus.
+    * Attention si la vente était révocable et que le prix d'achat de la dernière offre est inférieur
     * au prix de revient, la vente et l'offre sont supprimées, mais pas le produit, on le sort simplement
     * de la salle de vente */
     public void updateBD() throws SQLException {
@@ -792,11 +822,11 @@ public class Interface {
         // On a besoin de l'idVente pour aller voir si la vente associée était révocable
         while (res.next()) {
             int idVente = res.getInt(1); // On récupère l'idVente
-            Timestamp dateHeureFinVente = res.getTimestamp(2); // On recupère la date
+            Timestamp dateHeureFinVente = res.getTimestamp(2); // On récupère la date
 
-            //On verifie que l'offre n'est pas terminée
+            //On vérifie que l'offre n'est pas terminée
             if (compareTemps(dateHeureFinVente,actualDate)) {
-                // Si elle est terminée alors on regarde si la vente associée était révocable
+                // Si elle est terminée alors, on regarde si la vente associée était révocable
                 PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
                 statementRevocable.setInt(1,idVente);
                 ResultSet res2 = statementRevocable.executeQuery();
