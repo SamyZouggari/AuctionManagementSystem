@@ -777,4 +777,62 @@ public class Interface {
             }
         }
     }
+
+    /* Méthode qui va être appelée à chaque connection, et qui va verifier si des ventes se sont
+    * terminées depuis la dernière connection, et en fonction va supprimer ces ventes, offres associées
+    * et les produits vendues.
+    * Attention si la vente était révocable et que le prix d'achat de la dernière offre est ingérieur
+    * au prix de revient, la vente et l'offre sont supprimées, mais pas le produit, on le sort simplement
+    * de la salle de vente */
+    public void updateBD() throws SQLException {
+        Timestamp actualDate = getDateActuelle();
+        Statement checkOffres = conn.createStatement();
+        // On commence par gérer le cas des ventes à durée limitée
+        ResultSet res = checkOffres.executeQuery("SELECT idVente, DateHeureFin FROM VenteDureeLimitee");
+        // On a besoin de l'idVente pour aller voir si la vente associée était révocable
+        while (res.next()) {
+            int idVente = res.getInt(1); // On récupère l'idVente
+            Timestamp dateHeureFinVente = res.getTimestamp(2); // On recupère la date
+
+            //On verifie que l'offre n'est pas terminée
+            if (compareTemps(dateHeureFinVente,actualDate)) {
+                // Si elle est terminée alors on regarde si la vente associée était révocable
+                PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
+                statementRevocable.setInt(1,idVente);
+                ResultSet res2 = statementRevocable.executeQuery();
+                while (res2.next()) {
+                    int revoc = res2.getInt(1); // On va voir si la vente était révocable
+                    int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
+                    switch (revoc) {
+                        case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
+                            PreparedStatement statementProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                            statementProduit.setInt(1,idVente);
+                            ResultSet res3 = statementProduit.executeQuery();
+                            while (res3.next()) {
+                                int quantiteProd = res3.getInt(1);
+
+                                // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                // On supprime les offres
+                                suppressionAllOffres(idVente);
+                                // On supprime la ventes à durée Limité
+                                PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                                statementSupprVenteLim.setInt(1,idVente);
+                                statementSupprVenteLim.executeUpdate();
+                                // On supprime la vente
+                                suppressionVente(idVente);
+                                // On supprime le produit en faisant appel a la methode decrementationStock
+                                decrementationStock(idProduit,quantiteProd);
+                            }
+                            break;
+                        case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
+                            // est inférieur au prix de revient, mais on ne supprime pas le produit,
+                            // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
+                            break;
+                    }
+                }
+            }
+            conn.commit(); // On doit penser à commit (peut-être qu'il faut le faire dans l'autre while)
+        }
+        System.out.println("Base de données mise à jour");
+    }
 }
