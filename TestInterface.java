@@ -10,7 +10,7 @@ public class TestInterface {
     private static final String USER = "zouggars";
     private static final String PASSWD = "zouggars";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
         try {
             //Enregistrement du pilote spécifique à oracle fourni par oracle.jdbc
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -44,7 +44,7 @@ public class TestInterface {
             inter.setEmail(mail);
             ResultSet rs = requestUser.executeQuery();
             if (rs.next() && rs.getString(1).equals(mail)) {
-                System.out.println("Vous êtes connecté Mr " + prenom);
+                System.out.println("Vous êtes connecté " + prenom);
             } else {
                 PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO UTILISATEUR VALUES(?,?,?,?)");
                 statementPrix.setString(1, mail);
@@ -52,7 +52,7 @@ public class TestInterface {
                 statementPrix.setString(3, prenom);
                 statementPrix.setString(4, adresse);
                 statementPrix.executeUpdate();
-                System.out.println("Vous avez bien été enregistré Mr " + prenom);
+                System.out.println("Vous avez bien été enregistré " + prenom);
                 System.out.println("----------------------------------------------");
             }
 
