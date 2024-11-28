@@ -1,15 +1,15 @@
 import java.sql.*;
-import java.util.Locale;
-import java.util.Scanner;
+import java.util.*;
+
 import objets.*;
 import oracle.jdbc.driver.OracleDriver;
 
 import static java.lang.Float.parseFloat;
 import static java.lang.Integer.parseInt;
-import java.util.List;
-import java.util.ArrayList;
+
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 
 public class Interface {
@@ -245,14 +245,29 @@ public class Interface {
         return conn;
     }
 
+    public Timestamp getDateHeureDerniereOffre(int IdVente) throws SQLException {
+        PreparedStatement statementDerniereOffre = conn.prepareStatement("SELECT DateHeure FROM Offre WHERE IdVente = ? ");
+        statementDerniereOffre.setInt(1, IdVente);
+        ResultSet res3 = statementDerniereOffre.executeQuery();
+        while (res3.next()) {
+            return res3.getTimestamp(1);
+        }
+        return null;
+    }
+
+
+
 
     public void dumpResult(ResultSet r) throws SQLException {
-        while (r.next()) {
-            System.out.println("age: " + r.getString(1) +
-                    "- prenom: " + r.getString(2) +
-                    " - " + r.getInt(3) + " frères et soeurs");
+            while (r.next()) {
+                System.out.println("age: " + r.getString(1) +
+                        "- prenom: " + r.getString(2) +
+                        " - " + r.getInt(3) + " frères et soeurs");
+            }
         }
-    }
+
+
+
 
 
     public void header(String titre) {
@@ -265,8 +280,6 @@ public class Interface {
     System.out.print("\033[H\033[2J");  
     System.out.flush();  
     }
-
-
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -289,9 +302,15 @@ public class Interface {
             String curr_categorie = res.getString(2);
 
             System.out.println("Salle n°" + curr_salle + " , Catégorie : " + curr_categorie);
-
-
         }
+    }
+
+
+    public Timestamp ajouteDelai(Timestamp dateHeure, int delai) {
+        if (dateHeure == null) {
+            throw new IllegalArgumentException("La date ne peut pas être null");
+        }
+        return dateHeure;
     }
 
     public void affichageSalles(String categorie) throws SQLException {
@@ -319,21 +338,20 @@ public class Interface {
 
 
     public void affichageVentes(int IdSalle) throws SQLException {
-        PreparedStatement statement1 = conn.prepareStatement(" SELECT IdVente,NomProduit, PrixDepart FROM Vente LEFT JOIN Produit ON Vente.idProduit = Produit.idProduit WHERE IdSalle = ?");
-
+        // a durée limitée
+        PreparedStatement statement1 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vd.DateHeureFin FROM Vente v JOIN VenteDureeLimitee vd on v.idvente = vd.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
         statement1.setInt(1, IdSalle);
-
-        
         ResultSet res = statement1.executeQuery();
 
         this.clearScreen();
 
         this.header("VENTES DANS LA SALLE N°" + IdSalle);
-
+        System.out.println("Ventes à durée limitée : ");
         while (res.next()) {
 
             int curr_vente = res.getInt(1);
             String curr_nom = res.getString(2);
+            Timestamp dateFin = res.getTimestamp(4);
 
             PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
 
@@ -341,21 +359,45 @@ public class Interface {
 
             ResultSet res2 =  statementOffreMax.executeQuery();
 
+
             while(res2.next()){
-                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + res2.getString(1));
+                float prix = res2.getFloat(1);
+                if(prix == 0.0){
+                    prix = res.getFloat(3);
+                }
+                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ ". Date de fin de vente : "+ dateFin);
             }
+        }
 
+        // A durée illimitée
+        System.out.println("----------------------------------------------");
+        System.out.println("Ventes à durée illimitée : ");
+        PreparedStatement statement2 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vi.delai FROM Vente v JOIN VenteDureeIllimitee vi on v.idvente = vi.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
+        statement2.setInt(1, IdSalle);
+        ResultSet res2 = statement2.executeQuery();
 
+        while (res2.next()) {
 
+            int curr_vente = res2.getInt(1);
+            String curr_nom = res2.getString(2);
+            int delai = res2.getInt(4);
+            Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(curr_vente);
+            Timestamp dateFin = ajouteDelai(DateHeureDerniereOffre, delai);
+
+            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
+
+            statementOffreMax.setInt(1, curr_vente);
+
+            ResultSet res3 =  statementOffreMax.executeQuery();
+            while(res3.next()){
+                float prix = res2.getFloat(1);
+                if(prix == 0.0){
+                    prix = res2.getFloat(3);
+                }
+                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ ". Date de fin de vente : "+ dateFin);
+            }
         }
     }
-
-
-
-
-
-
-
     public void process_acheteur() throws SQLException{
         this.affichageSalles();
 
@@ -603,6 +645,24 @@ public class Interface {
                 }
             }
         }
+    }
+
+    // retourne true si timestamp2 > timestamp 1
+    public boolean compareTemps(Timestamp timestamp1, Timestamp timestamp2 ) {
+        return (Math.abs(timestamp2.getTime() - timestamp1.getTime()) > 0);
+    }
+
+    public static String compareTimestamps(Timestamp timestamp1, Timestamp timestamp2) {
+        // Calcul de la différence absolue en millisecondes
+        long diffInMillis = Math.abs(timestamp2.getTime() - timestamp1.getTime());
+
+        // Conversion en jours, heures, minutes et secondes
+        long days = TimeUnit.MILLISECONDS.toDays(diffInMillis);
+        long hours = TimeUnit.MILLISECONDS.toHours(diffInMillis) % 24;
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(diffInMillis) % 60;
+
+        // Retourner la différence sous forme de chaîne
+        return String.format("%d jours, %d heures, %d minutes, %d secondes", days, hours, minutes);
     }
 
 
