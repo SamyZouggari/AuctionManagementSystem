@@ -58,13 +58,14 @@ public class Interface {
         Salle nouvelleSalle = new Salle(new_list, categorie);
     }
 
-    public void CreerVente(int idProduit) throws SQLException {
+    public void CreerVente(int idProduit, String categorie) throws SQLException {
         int idVente = getCompteurIdVente();
         incrCompteurIdVente();
         Scanner scan = new Scanner(System.in);
         System.out.println("A quel prix de départ voulez-vous commencez cette vente ?");
         Float prixDeDepart = scan.nextFloat();
-        System.out.println("Dans quel salle voulez vous vendre votre produit?");
+        this.affichageSalles(categorie);
+        System.out.println("Dans quelle salle voulez vous vendre votre produit ?");
         //affiche les salles possibles, l'utilisateur rentre un numero de salle
         //besoin d'ajouter la verification que la salle choisie ait la même catégorie que le produit
         int idSalle = scan.nextInt();
@@ -201,6 +202,29 @@ public class Interface {
         }
     }
 
+    public void affichageSalles(String categorie) throws SQLException {
+        PreparedStatement statement1 = conn.prepareStatement(" SELECT SalleDeVente.IdSalle,NomCategorie FROM SalleDeVente LEFT JOIN Propose ON SalleDeVente.IdSalle = Propose.IdSalle WHERE NomCategorie = ?");
+
+        statement1.setString(1,categorie);
+
+        ResultSet res = statement1.executeQuery();
+
+        this.clearScreen();
+
+        this.header("LISTE DES SALLES");
+
+        while (res.next()) {
+
+            int curr_salle = res.getInt(1);
+            String curr_categorie = res.getString(2);
+
+            System.out.println("Salle n°" + curr_salle + " , Catégorie : " + curr_categorie);
+        }
+        res.close();
+        statement1.close();
+    }
+
+
 
     public void affichageVentes(int IdSalle) throws SQLException {
         PreparedStatement statement1 = conn.prepareStatement(" SELECT IdVente,NomProduit, PrixDepart FROM Vente LEFT JOIN Produit ON Vente.idProduit = Produit.idProduit WHERE IdSalle = ?");
@@ -280,7 +304,7 @@ public class Interface {
     }
 
     public void affichageProduits(String cat) throws SQLException {
-        PreparedStatement statement1 = conn.prepareStatement("SELECT NomProduit, Stock FROM Produit WHERE NomCategorie = ?");
+        PreparedStatement statement1 = conn.prepareStatement("SELECT NomProduit, Stock, IdProduit FROM Produit WHERE NomCategorie = ?");
 
         statement1.setString(1, cat);
 
@@ -294,8 +318,9 @@ public class Interface {
         while (res.next()) {
             String curr_produit = res.getString(1);
             int curr_stock = res.getInt(2);
+            int curr_id_produit = res.getInt(3);
 
-            System.out.println("Produit : " + curr_produit + " , Stock : " + curr_stock);
+            System.out.println("Produit : " + curr_produit + " , Stock : " + curr_stock + ", IdProduit : " + curr_id_produit);
         }
 
     }
@@ -316,7 +341,7 @@ public class Interface {
 
         System.out.println("\n\n Quelle produit désirez vous vendre ? Entrez l'identifiant du produit.");
         int IdProduit = scannerNum.nextInt();
-        CreerVente(IdProduit);
+        CreerVente(IdProduit, num);
     }
 
 
