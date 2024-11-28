@@ -24,13 +24,20 @@ public class Interface {
     String currMail;
 
 
-    public Interface() {
+    public Interface() throws SQLException{
         try {
             this.conn = connexion();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        this.compteurIdVente = 0;
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT MAX(IdVente) FROM Vente");
+        if (rs.next()) {
+            compteurIdVente = rs.getInt(1) ; // Initialise à MAX
+        } else {
+            compteurIdVente = 0; // Si la table est vide
+        }
+        this.compteurIdVente = compteurIdVente;
     }
 
     public int getCompteurIdVente() {
@@ -38,7 +45,7 @@ public class Interface {
     }
 
     public void incrCompteurIdVente() {
-        this.compteurIdVente += 1;
+        this.compteurIdVente++;
     }
 
     public int getCompteurIdProduit() {
@@ -49,26 +56,101 @@ public class Interface {
         this.compteurIdProduit += 1;
     }
 
+//    public void OuvrirSalle() {
+//        System.out.println("De quelle catégorie sont les produits que vous aimereriez vendre dans cette salle ?");
+//        Scanner scan = new Scanner(System.in);
+//        String categorie = scan.next();
+//        scan.nextLine();
+//        List new_list = new ArrayList<Vente>();
+//        Salle nouvelleSalle = new Salle(new_list, categorie);
+//    }
+
     public void OuvrirSalle() {
-        System.out.println("De quelle catégorie sont les produits que vous aimereriez vendre dans cette salle ?");
+        // catégorie qu'il souhaite vendre
+        System.out.println("De quelle catégorie sont les produits que vous aimeriez vendre dans cette salle ?");
         Scanner scan = new Scanner(System.in);
-        String categorie = scan.next();
-        scan.nextLine();
-        List new_list = new ArrayList<Vente>();
-        Salle nouvelleSalle = new Salle(new_list, categorie);
+        String categorie = scan.nextLine();
+
+        // Vérifier si des salles existent déjà pour cette catégorie
+        try {
+            if (!sallesExistantesPourCategorie(categorie)) {
+                System.out.println("Aucune salle disponible pour cette catégorie. Voulez-vous en créer une nouvelle ?");
+                System.out.println("Répondez par OUI pour créer une nouvelle salle ou NON pour annuler.");
+                String reponse = scan.nextLine();
+
+                if (reponse.equals("OUI")) {
+                    // Création d'une salle
+                    int idNouvelleSalle = creerNouvelleSalle();
+                    ajouterSalleCategorie(idNouvelleSalle, categorie);
+
+                    System.out.println("Nouvelle salle créée avec succès avec l'ID " + idNouvelleSalle);
+                } else {
+                    System.out.println("Aucune salle n'a été créée.");
+                }
+            } else {
+                System.out.println("Voici les salles disponibles.");
+                this.affichageSalles(categorie);
+            }
+        } catch (SQLException e) {
+            System.out.println("Erreur lors de la vérification des salles : " + e.getMessage());
+        }
     }
 
+
+    public boolean sallesExistantesPourCategorie(String categorie)throws SQLException{
+        PreparedStatement statement = conn.prepareStatement("SELECT COUNT FROM Propose WHERE NomCategorie = ?");
+        statement.setString(1, categorie);
+        ResultSet res = statement.executeQuery();
+
+        if (res.next()) {
+            return res.getInt(1) > 0; // Retourne true si des salles existent
+        }
+        return false;
+    }
+
+
+    public int creerNouvelleSalle() throws  SQLException{
+        PreparedStatement maxIdSalle = conn.prepareStatement("SELECT MAX(IdSalle) FROM SalleDeVente");
+        ResultSet rs = maxIdSalle.executeQuery();
+
+        int newIdSalle = 1;
+        if (rs.next()) {
+            newIdSalle = rs.getInt(1) + 1;
+        }
+
+        PreparedStatement statement = conn.prepareStatement("INSERT INTO SalleDeVente(IdSalle) VALUES (?)");
+        statement.setInt(1, newIdSalle);
+        int res = statement.executeUpdate();
+
+        if (res == 1) {
+            return 1; // Retourne 1 si des salles existent
+        }
+        else{
+            throw new SQLException("Erreur lors de la génération de la salle");
+        }
+    };
+
+    public void ajouterSalleCategorie(int idNouvelleSalle, String categorie)throws SQLException{
+        PreparedStatement statement = conn.prepareStatement("INSERT INTO Propose(NomCategorie, IdSalle) VALUES (?;?)");
+        statement.setString(1, categorie);
+        statement.setInt(2, idNouvelleSalle);
+        statement.executeUpdate();
+    };
+    
     public void CreerVente(int idProduit, String categorie) throws SQLException {
-        int idVente = getCompteurIdVente();
         incrCompteurIdVente();
+        int idVente = getCompteurIdVente();
+        System.out.println("Vente " + idVente);
         Scanner scan = new Scanner(System.in);
         System.out.println("A quel prix de départ voulez-vous commencez cette vente ?");
         Float prixDeDepart = scan.nextFloat();
         this.affichageSalles(categorie);
-        System.out.println("Dans quelle salle voulez vous vendre votre produit ?");
+        System.out.println("\n"+ "Voici les salles dans lesquelles vous pouvez vendre votre produit. Entrez l'ID de la salle dans laquelle vous souhaitez vendre votre produit.");
         //affiche les salles possibles, l'utilisateur rentre un numero de salle
         //besoin d'ajouter la verification que la salle choisie ait la même catégorie que le produit
+
         int idSalle = scan.nextInt();
+        scan.nextLine();
         System.out.println("Désireriez-vous que cette vente soit révocable ou non ? Répondez par OUI ou NON.");
         String revocable = scan.nextLine();
         int revocableInt = 0;
@@ -93,23 +175,33 @@ public class Interface {
         } else if (multiple.equals("NON")) {
             multipleInt = 0;
         }
-        System.out.println("Désireriez-vous que cette vente soit limitée ou non ? Répondez par OUI  ou NON. Si oui, entrez la date et l'heure de fin sous forme AAAA-MM-JJ.");
+        System.out.println("Désireriez-vous que cette vente soit limitée ou non ? Répondez par OUI  ou NON. ");
         String limité = scan.nextLine();
-        int limiteInt = 1;
+        PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?, ?)");
+        statement1.setInt(1, idVente);
+        statement1.setFloat(2, prixDeDepart);
+        statement1.setInt(3, revocableInt);
+        statement1.setInt(4, montanteInt);
+        statement1.setInt(5, multipleInt);
+        statement1.setInt(6, idProduit);
+        statement1.setInt(7, idSalle);
+        statement1.executeUpdate();
         if (limité.equals("OUI")) {
-            limiteInt = 1;
+            System.out.println("Si oui, entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");
+            Scanner scan6 = new Scanner(System.in);
+            String DateHeureFin = scan6.nextLine();
+            System.out.println(DateHeureFin);
+            PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeLimitee (IdVente, DateHeureFin) VALUES (?,TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))");
+            statement.setInt(1, idVente);
+            statement.setString(2, DateHeureFin);
+            statement.executeUpdate();
         } else if (limité.equals("NON")) {
-            limiteInt = 0;
+            int delai = 10;
+            PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, DateHeureFin) VALUES (?,?)");
+            statement.setInt(1, idVente);
+            statement.setInt(2, delai);
+            statement.executeUpdate();
         }
-        PreparedStatement statement = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, DureeLimite, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?, ?, ?)");
-        statement.setInt(1, idVente);
-        statement.setFloat(2, prixDeDepart);
-        statement.setInt(3, limiteInt);
-        statement.setInt(4, revocableInt);
-        statement.setInt(5, montanteInt);
-        statement.setInt(6, multipleInt);
-        statement.setInt(7, idProduit);
-        statement.setInt(8, idSalle);
 
     }
 

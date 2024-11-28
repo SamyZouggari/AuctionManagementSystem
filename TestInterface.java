@@ -10,7 +10,7 @@ public class TestInterface {
     private static final String USER = "zouggars";
     private static final String PASSWD = "zouggars";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
         try {
             //Enregistrement du pilote spécifique à oracle fourni par oracle.jdbc
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
