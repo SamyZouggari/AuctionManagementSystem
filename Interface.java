@@ -19,7 +19,6 @@ public class Interface {
     String PASSWD = "zouggars";
     Connection conn;
     int compteurIdVente;
-    //ArrayList<Pair<String, String>> salles;
     int compteurIdProduit;
     String currMail;
 
