@@ -33,7 +33,6 @@ CREATE TABLE CaracteristiqueProduit(NomCaracteristique varchar(100) NOT NULL CON
             IdProduit int NOT NULL CONSTRAINT KFIdProduitCaracteristique REFERENCES Produit(idProduit) ON DELETE CASCADE,
             Valeur varchar(100) NOT NULL);
 
-select v.idvente, vd.dateheurefin, v.idsalle from vente v join VenteDureeLimitee vd on v.IdVente = vd.IdVente;
 
 CREATE TABLE Vente(IdVente int NOT NULL CONSTRAINT KVente primary key,
                     PrixDepart float NOT NULL CONSTRAINT PrixDepartPositif CHECK(PrixDepart>0.0),
@@ -46,7 +45,7 @@ CREATE TABLE Vente(IdVente int NOT NULL CONSTRAINT KVente primary key,
                     CONSTRAINT FKIdSalle FOREIGN KEY(IdSalle) REFERENCES SalleDeVente(IdSalle));
 
 CREATE TABLE VenteDureeLimitee(IdVente int REFERENCES Vente CONSTRAINT KVenteDL primary key,
-                                DateHeureFin TIMESTAMP NOT NULL,
+                                DateHeureFin TIMESTAMP NOT NULL
                                 );
 
 CREATE TABLE DateHeureOffre(DateHeure TIMESTAMP NOT NULL CONSTRAINT KDate PRIMARY KEY);
