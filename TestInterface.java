@@ -22,7 +22,7 @@ public class TestInterface {
             System.out.println("connected.");
 
             Interface inter = new Interface();
-            //inter.updateBD();
+            inter.updateBD();
             inter.header("VENTE AUX ENCHERES");
             System.out.println("Bonjour, veuillez vous identifier : ");
             System.out.println("Adresse mail : ");
@@ -71,7 +71,7 @@ public class TestInterface {
 
             switch(num) {
                 case 0:
-                    inter.process_acheteur();
+                    inter.process_acheteur(mail);
                     break;
                 case 1:
                     inter.process_vendeur();
