@@ -185,7 +185,7 @@ public class Interface {
         System.out.println("Désireriez-vous que cette vente soit à durée limitée ou non ? Répondez par OUI  ou NON. ");
         Scanner scanLim = new Scanner(System.in);
         String limité = scanLim.nextLine();
-        PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?, ?)");
+        PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?,?,?)");
         statement1.setInt(1, idVente);
         statement1.setFloat(2, prixDeDepart);
         statement1.setInt(3, revocableInt);
@@ -193,6 +193,7 @@ public class Interface {
         statement1.setInt(5, multipleInt);
         statement1.setInt(6, idProduit);
         statement1.setInt(7, idSalle);
+        statement1.setTimestamp(8,getDateActuelle());
         statement1.executeUpdate();
         if (limité.equals("OUI")) {
             System.out.println("Entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");

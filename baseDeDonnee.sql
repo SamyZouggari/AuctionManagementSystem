@@ -42,7 +42,8 @@ CREATE TABLE Vente(IdVente int NOT NULL CONSTRAINT KVente primary key,
                     idProduit int NOT NULL,
                     CONSTRAINT FKIdProduit FOREIGN KEY(idProduit) REFERENCES Produit(idProduit),
                     IdSalle int NOT NULL,
-                    CONSTRAINT FKIdSalle FOREIGN KEY(IdSalle) REFERENCES SalleDeVente(IdSalle));
+                    CONSTRAINT FKIdSalle FOREIGN KEY(IdSalle) REFERENCES SalleDeVente(IdSalle),
+                    DateHeureVente TIMESTAMP NOT NULL);
 
 CREATE TABLE VenteDureeLimitee(IdVente int REFERENCES Vente CONSTRAINT KVenteDL primary key,
                                 DateHeureFin TIMESTAMP NOT NULL
