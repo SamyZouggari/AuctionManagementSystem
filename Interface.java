@@ -907,6 +907,9 @@ public class Interface {
                         case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
                             // est inférieur au prix de revient, mais on ne supprime pas le produit,
                             // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
+                            PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                            statementQtProduit.setInt(1,idVente);
+                            ResultSet res4 = statementQtProduit.executeQuery();
                             PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
                             selectPrixRevient.setInt(1,idProduit);
                             ResultSet prixRevient = selectPrixRevient.executeQuery();
@@ -932,9 +935,6 @@ public class Interface {
                                         // On supprime ensuite la vente associée à l'offre
                                         suppressionVente(idVente);
                                         // On decrémente enfin le produit
-                                        PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
-                                        statementQtProduit.setInt(1,idVente);
-                                        ResultSet res4 = statementQtProduit.executeQuery();
                                         if (res4.next()) {
                                             int quantiteProd = res4.getInt(1);
                                             decrementationStock(idProduit, quantiteProd);
@@ -953,7 +953,7 @@ public class Interface {
                                         // On doit maintenant gérer le produit
                                         // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
                                         // on va d'abord recup toutes les values du produit
-                                        PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Sotck,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                        PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
                                         selectValeursProduit.setInt(1,idProduit);
                                         ResultSet resProd = selectValeursProduit.executeQuery();
                                         while (resProd.next()) {
@@ -1029,10 +1029,12 @@ public class Interface {
                         case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
                             // est inférieur au prix de revient, mais on ne supprime pas le produit,
                             // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
+                            PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                            statementQtProduit.setInt(1,idVente);
+                            ResultSet res4 = statementQtProduit.executeQuery();
                             PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
                             selectPrixRevient.setInt(1,idProduit);
                             ResultSet prixRevient = selectPrixRevient.executeQuery();
-
                             PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
                             statementOffreMax.setInt(1, idProduit);
                             ResultSet resOffreMax = statementOffreMax.executeQuery();
@@ -1054,9 +1056,7 @@ public class Interface {
                                         // On supprime ensuite la vente associée à l'offre
                                         suppressionVente(idVente);
                                         // On decrémente enfin le produit
-                                        PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
-                                        statementQtProduit.setInt(1,idVente);
-                                        ResultSet res4 = statementQtProduit.executeQuery();
+
                                         if (res4.next()) {
                                             int quantiteProd = res4.getInt(1);
                                             decrementationStock(idProduit, quantiteProd);
