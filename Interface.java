@@ -1,4 +1,6 @@
 import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import objets.*;
@@ -147,36 +149,42 @@ public class Interface {
         System.out.println("\n"+ "Voici les salles dans lesquelles vous pouvez vendre votre produit. Entrez l'ID de la salle dans laquelle vous souhaitez vendre votre produit.");
         //affiche les salles possibles, l'utilisateur rentre un numero de salle
         //besoin d'ajouter la verification que la salle choisie ait la même catégorie que le produit
-
         int idSalle = scan.nextInt();
-        scan.nextLine();
+        System.out.println("Combien voulez-vous en vendre ?");
+        int quantite = scan.nextInt();
         System.out.println("Désireriez-vous que cette vente soit révocable ou non ? Répondez par OUI ou NON.");
-        String revocable = scan.nextLine();
+        Scanner scanRev = new Scanner(System.in);
+        String revocable = scanRev.nextLine();
         int revocableInt = 0;
         if (revocable.equals("OUI")) {
             revocableInt = 1;
-        } else if (revocable.equals("NON")) {
+        }
+        else if (revocable.equals("NON")) {
             revocableInt = 0;
         }
         System.out.println("Désireriez-vous que cette vente soit montante ou descendante ? Répondez par MONTANTE ou DESCENDANTE.");
-        String montante = scan.nextLine();
+        Scanner scanMon = new Scanner(System.in);
+        String montante = scanMon.nextLine();
         int montanteInt = 1;
         if (montante.equals("MONTANTE")) {
             montanteInt = 1;
-        } else if (revocable.equals("DESCENDANTE")) {
+        } else if (montante.equals("DESCENDANTE")) {
             montanteInt = 0;
         }
-        System.out.println("Désireriez-vous que cette vente soit multiple ou non ? Répondez par OUI ou NON.");
-        String multiple = scan.nextLine();
+        System.out.println("Désireriez-vous que cette vente soit à offres multiples ou non ? Répondez par OUI ou NON.");
+        Scanner scanMult = new Scanner(System.in);
+        String multiple = scanMult.nextLine();
+        scan.nextLine();
         int multipleInt = 1;
         if (multiple.equals("OUI")) {
             multipleInt = 1;
         } else if (multiple.equals("NON")) {
             multipleInt = 0;
         }
-        System.out.println("Désireriez-vous que cette vente soit limitée ou non ? Répondez par OUI  ou NON. ");
-        String limité = scan.nextLine();
-        PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?, ?)");
+        System.out.println("Désireriez-vous que cette vente soit à durée limitée ou non ? Répondez par OUI  ou NON. ");
+        Scanner scanLim = new Scanner(System.in);
+        String limité = scanLim.nextLine();
+        PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?,?,?)");
         statement1.setInt(1, idVente);
         statement1.setFloat(2, prixDeDepart);
         statement1.setInt(3, revocableInt);
@@ -184,9 +192,10 @@ public class Interface {
         statement1.setInt(5, multipleInt);
         statement1.setInt(6, idProduit);
         statement1.setInt(7, idSalle);
+        statement1.setTimestamp(8,getDateActuelle());
         statement1.executeUpdate();
         if (limité.equals("OUI")) {
-            System.out.println("Si oui, entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");
+            System.out.println("Entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");
             Scanner scan6 = new Scanner(System.in);
             String DateHeureFin = scan6.nextLine();
             System.out.println(DateHeureFin);
@@ -196,12 +205,12 @@ public class Interface {
             statement.executeUpdate();
         } else if (limité.equals("NON")) {
             int delai = 10;
-            PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, DateHeureFin) VALUES (?,?)");
+            PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
             statement.setInt(1, idVente);
             statement.setInt(2, delai);
             statement.executeUpdate();
         }
-
+        incrementeStock(idProduit, quantite);
     }
 
 //    public Produit CreerProduit() throws SQLException {
@@ -309,7 +318,15 @@ public class Interface {
         if (dateHeure == null) {
             throw new IllegalArgumentException("La date ne peut pas être null");
         }
-        return dateHeure;
+        // Créer une instance de Calendar et définir la date initiale
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(dateHeure);
+
+        // Ajouter le délai en minutes
+        cal.add(Calendar.MINUTE, delai);
+
+        // Retourner le nouveau Timestamp
+        return new Timestamp(cal.getTimeInMillis());
     }
 
     public void affichageSalles(String categorie) throws SQLException {
@@ -337,7 +354,7 @@ public class Interface {
 
 
     public void affichageVentes(int IdSalle) throws SQLException {
-        // a durée limitée
+        // À durée limitée
         PreparedStatement statement1 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vd.DateHeureFin FROM Vente v JOIN VenteDureeLimitee vd on v.idvente = vd.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
         statement1.setInt(1, IdSalle);
         ResultSet res = statement1.executeQuery();
@@ -345,7 +362,6 @@ public class Interface {
         this.clearScreen();
 
         this.header("VENTES DANS LA SALLE N°" + IdSalle);
-        System.out.println("Ventes à durée limitée : ");
         while (res.next()) {
 
             int curr_vente = res.getInt(1);
@@ -364,13 +380,13 @@ public class Interface {
                 if(prix == 0.0){
                     prix = res.getFloat(3);
                 }
-                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ ". Date de fin de vente : "+ dateFin);
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateFinSansMilli = formatter.format(dateFin);
+                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ " €. Date de fin de vente : "+ dateFinSansMilli);
             }
         }
 
-        // A durée illimitée
-        System.out.println("----------------------------------------------");
-        System.out.println("Ventes à durée illimitée : ");
+        // À durée illimitée
         PreparedStatement statement2 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vi.delai FROM Vente v JOIN VenteDureeIllimitee vi on v.idvente = vi.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
         statement2.setInt(1, IdSalle);
         ResultSet res2 = statement2.executeQuery();
@@ -380,24 +396,28 @@ public class Interface {
             int curr_vente = res2.getInt(1);
             String curr_nom = res2.getString(2);
             int delai = res2.getInt(4);
-            Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(curr_vente);
-            Timestamp dateFin = ajouteDelai(DateHeureDerniereOffre, delai);
-
             PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
 
             statementOffreMax.setInt(1, curr_vente);
 
             ResultSet res3 =  statementOffreMax.executeQuery();
             while(res3.next()){
+                Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(curr_vente);
+                if(DateHeureDerniereOffre == null){
+                    DateHeureDerniereOffre = getDateActuelle();
+                }
+                Timestamp dateFin = ajouteDelai(DateHeureDerniereOffre, delai);
                 float prix = res2.getFloat(1);
                 if(prix == 0.0){
                     prix = res2.getFloat(3);
                 }
-                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ ". Date de fin de vente : "+ dateFin);
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateFinSansMilli = formatter.format(dateFin);
+                System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ " €. Date de fin de vente : "+ dateFinSansMilli);
             }
         }
     }
-    public void process_acheteur() throws SQLException{
+    public void process_acheteur(String mail) throws SQLException{
         this.affichageSalles();
 
         System.out.println("\n\nDans quelle salle désirez vous vous rendre ? ");
@@ -408,8 +428,10 @@ public class Interface {
         this.affichageVentes(num);
 
         System.out.println("\n\nSur quelle vente voulez-vous enchérir ?");
+        Scanner scannerVente = new Scanner(System.in);
+        int idVente = scannerNum.nextInt();
 
-        //Gestion de l'enchère avec le code de Samy
+        enchere(idVente, mail);
     }   
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -560,17 +582,25 @@ public class Interface {
     }
 
     public boolean IsDureeLimitee(int IdVente) throws SQLException {
-        PreparedStatement statementPrix = conn.prepareStatement("SELECT IDVENTE FROM VENTEDUREEILLIMITEE WHERE IDVENTE = ?");
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT IDVENTE FROM VENTEDUREELIMITEE WHERE IDVENTE = ?");
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
-        while(res.next() && res.getInt(1) >=0 ) {
+        if(res.next() && res.getInt(1) >=0 ) {
             return true;
         }
         return false;
     }
 
-    public void enchere(String produit, String mail) throws SQLException {
+    public void enchere(int idVente, String mail) throws SQLException {
         System.out.println("----------------------------------------------------");
+        PreparedStatement statementProduit = conn.prepareStatement("SELECT NomProduit FROM Produit JOIN Vente on Vente.idProduit=Produit.idProduit WHERE Vente.idVente = ?");
+        statementProduit.setInt(1, idVente);
+        ResultSet resProduit = statementProduit.executeQuery();
+        String produit="";
+        if(resProduit.next()) {
+            produit = resProduit.getString(1);
+        }
+
         System.out.println("Bienvenue dans l'enchère du produit correspondant : " + produit);
         String rev;
         String montante;
@@ -582,14 +612,8 @@ public class Interface {
         else {
             montante = "non montante";
         }
-        if(IsDureeLimitee(getIdVente(produit))) {
-            lim = "à durée limitée";
-        }
-        else {
-            lim = "à durée illimitée";
-        }
 
-        System.out.println("La vente est "+ montante+" et "+ lim +", est-ce que cela vous convient? (oui/non) :" );
+        System.out.println("La vente est "+ montante+", est-ce que cela vous convient? (oui/non) :" );
         Scanner scanner = new Scanner(System.in);
         String rep = scanner.next();
         if (rep.equals("non")){
@@ -600,11 +624,15 @@ public class Interface {
             statementPrix.setString(1, produit);
             ResultSet res = statementPrix.executeQuery();
             while (res.next()) {
-                PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM OFFRE, VENTE WHERE OFFRE.IDVENTE=VENTE.IDVENTE GROUP BY ? ");
-                statementOffreMax.setString(1, "" + getIdProduit(produit));
+                // cas où il y a déjà des offres
+                PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
+                statementOffreMax.setInt(1, getIdProduit(produit));
                 ResultSet resOffreMax = statementOffreMax.executeQuery();
-                while (resOffreMax.next()) {
-                    float offreMax = resOffreMax.getFloat(1);
+                if (resOffreMax.next()) {
+                    float offreMax = resOffreMax.getFloat(2);
+                    if(offreMax==0){
+                        offreMax = resOffreMax.getFloat(1);
+                    }
                     int stock = res.getInt(1);
                     System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
                     // Vérification suivant si l'offre est montante ou pas
@@ -639,7 +667,8 @@ public class Interface {
                         scanQuantite = new Scanner(System.in);
                         quantite = scanQuantite.nextInt();
                     }
-                    ajouteOffre(getIdProduit(produit), mail, offre, quantite);
+                    ajouteOffre(idVente, mail, offre, quantite);
+                    //decrementationStock(getIdProduit(produit),quantite);
                     System.out.println("Enchère effectuée");
                 }
             }
@@ -648,7 +677,7 @@ public class Interface {
 
     // retourne true si timestamp2 > timestamp 1
     public boolean compareTemps(Timestamp timestamp1, Timestamp timestamp2 ) {
-        return (Math.abs(timestamp2.getTime() - timestamp1.getTime()) > 0);
+        return timestamp1.after(timestamp2);
     }
 
     public static String compareTimestamps(Timestamp timestamp1, Timestamp timestamp2) {
@@ -705,36 +734,68 @@ public class Interface {
     }
 
     public void ajouteOffre(int IdVente, String eMail, float PrixAchat, int quantite) throws SQLException {
+        Timestamp dateActuelle = getDateActuelle();
+        PreparedStatement statementDateHeureOffre = conn.prepareStatement("INSERT INTO DateHeureOffre VALUES(?)");
+        statementDateHeureOffre.setTimestamp(1,dateActuelle);
+        statementDateHeureOffre.executeUpdate();
         PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO OFFRE VALUES(?,?,?,?,?)");
         statementPrix.setInt(1,IdVente);
         statementPrix.setString(2, eMail);
         statementPrix.setFloat(3, PrixAchat);
-        statementPrix.setTimestamp(4, getDateActuelle());
-        statementPrix.setInt(5, quantite);
+        statementPrix.setInt(4, quantite);
+        statementPrix.setTimestamp(5, dateActuelle);
+
         statementPrix.executeUpdate();
     }
 
-    public void suppressionData(int idProduit) throws SQLException {
+    public void suppressionProduit(int idProduit) throws SQLException {
+        suppressionAllOffresProduit(idProduit);
+        PreparedStatement statementOffre = conn.prepareStatement("SELECT IDVENTE FROM Vente WHERE idProduit = ?");
+        statementOffre.setInt(1, idProduit);
+        ResultSet res= statementOffre.executeQuery();
+        while(res.next()){
+            int idv = res.getInt(1);
+            suppressionVente(idv);
+        }
         PreparedStatement statementProduit = conn.prepareStatement("DELETE FROM Produit WHERE idProduit = ?");
         statementProduit.setString(1, Integer.toString(idProduit));
-        ResultSet res = statementProduit.executeQuery();
-        //System.out.println("Produit supprimé de la base de donnée");
+        statementProduit.executeQuery();
     }
 
 
-
-
     public void suppressionVente(int idVente) throws SQLException {
+        boolean lim = IsDureeLimitee(idVente);
+        PreparedStatement statementVentelim;
+        if(lim){
+            statementVentelim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+        }
+        else {
+            statementVentelim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+        }
+        statementVentelim.setInt(1, idVente);
+        statementVentelim.executeUpdate();
+
         PreparedStatement statementVente = conn.prepareStatement("DELETE FROM Vente WHERE idVente = ?");
         statementVente.setInt(1, idVente);
-        ResultSet res = statementVente.executeQuery();
+        statementVente.executeUpdate();
     }
 
     /*
      * Methode pour supprimer toutes les offres qui ont ete effectuees sur un produit à partir de l'id de la vente */
     public void suppressionAllOffres(int idVente) throws SQLException {
         PreparedStatement statementOffre = conn.prepareStatement("DELETE FROM Offre WHERE IdVente = ?");
-        statementOffre.setString(1, Integer.toString(idVente));
+        statementOffre.setInt(1, idVente);
+        statementOffre.executeUpdate();
+    }
+
+    public void suppressionAllOffresProduit(int idProduit) throws SQLException {
+        PreparedStatement statementOffre = conn.prepareStatement("SELECT IDVENTE FROM Vente WHERE idProduit = ?");
+        statementOffre.setInt(1, idProduit);
+        ResultSet res= statementOffre.executeQuery();
+        while(res.next()){
+            int idp = res.getInt(1);
+            suppressionAllOffres(idp);
+        }
     }
 
     /*
@@ -752,8 +813,25 @@ public class Interface {
         }
     }
 
-    /* Methode qui va etre appelee a la fin d'une enchere pour decrementer le stock d'un produit
-    * est le supprimer si ce stock passe a 0*/
+    /*On va l'appeler quand qqn met en vente un produit */
+    public void incrementeStock(int idp, int quantite) throws SQLException {
+        PreparedStatement statementStock = conn.prepareStatement("SELECT Stock FROM Produit WHERE IDPRODUIT = ?");
+        statementStock.setInt(1, idp);
+        ResultSet res = statementStock.executeQuery();
+        int stock=0;
+
+        if (res.next()) {
+            stock = res.getInt(1);
+        }
+
+        PreparedStatement incr = conn.prepareStatement("UPDATE Produit SET Stock = ? WHERE IDPRODUIT = ?");
+        incr.setInt(1, quantite+stock);
+        incr.setInt(2, idp);
+        incr.executeQuery();
+    }
+
+    /* Methode qui va etre appelee à la fin d'une enchere pour decrementer le stock d'un produit
+    * est le supprimer si ce stock passe à 0*/
     public void decrementationStock(int idProduit, int quantiteProduit) throws SQLException {
         // On part du principe que l'offre s'est terminee, qu'on a deja verifie que stock > quantiteProduit
         PreparedStatement statementStock = conn.prepareStatement("SELECT p.Stock FROM Produit p WHERE p.idProduit = ?");
@@ -762,18 +840,265 @@ public class Interface {
         while (res.next()) {
             int stockRestant = res.getInt(1);
             if (stockRestant - quantiteProduit == 0) {
-                // Si plus de stock après achat on supprime le produit de la BDD
-                PreparedStatement statementDelete = conn.prepareStatement("DELETE FROM Produit WHERE Produit.idProduit = ?");
-                statementDelete.setInt(1,idProduit);
-                statementDelete.executeUpdate();
-                conn.commit();
+                suppressionProduit(idProduit);
             } else {
-                // Si il reste encore du stock à la fin de l'achat, on decremente simplement le stock
+                // S'il reste encore du stock à la fin de l'achat, on décrémente simplement le stock
                 PreparedStatement statementAlter = conn.prepareStatement("UPDATE Produit SET Stock = ? WHERE Produit.idProduit = ?");
-                statementAlter.setInt(1,stockRestant);
+                statementAlter.setInt(1,stockRestant - quantiteProduit);
                 statementAlter.setInt(2,idProduit);
-                conn.commit();
+                statementAlter.executeUpdate();
             }
         }
+    }
+
+    /* Méthode qui va être appelée à chaque connection, et qui va verifier si des ventes se sont
+    * terminées depuis la dernière connection, et en fonction va supprimer ces ventes, offres associées
+    * et les produits vendus.
+    * Attention si la vente était révocable et que le prix d'achat de la dernière offre est inférieur
+    * au prix de revient, la vente et l'offre sont supprimées, mais pas le produit, on le sort simplement
+    * de la salle de vente */
+    public void updateBD() throws SQLException {
+        Timestamp actualDate = getDateActuelle();
+        Statement checkOffres = conn.createStatement();
+        // On commence par gérer le cas des ventes à durée limitée
+        ResultSet res = checkOffres.executeQuery("SELECT idVente, DateHeureFin FROM VenteDureeLimitee");
+        // On a besoin de l'idVente pour aller voir si la vente associée était révocable
+        while (res.next()) {
+            int idVente = res.getInt(1); // On récupère l'idVente
+            Timestamp dateHeureFinVente = res.getTimestamp(2); // On récupère la date
+
+            //On vérifie que l'offre n'est pas terminée
+            if (!compareTemps(dateHeureFinVente,actualDate)) {
+                // Si elle est terminée alors, on regarde si la vente associée était révocable
+                PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
+                statementRevocable.setInt(1,idVente);
+                ResultSet res2 = statementRevocable.executeQuery();
+                while (res2.next()) {
+                    int revoc = res2.getInt(1); // On va voir si la vente était révocable
+                    int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
+                    switch (revoc) {
+                        case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
+                            PreparedStatement statementProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                            statementProduit.setInt(1,idVente);
+                            ResultSet res3 = statementProduit.executeQuery();
+                                if (res3.next()) {
+                                    int quantiteProd = res3.getInt(1);
+
+                                    // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                    // On supprime les offres.
+                                    suppressionAllOffres(idVente);
+                                    // On supprime les ventes à durée Limité
+                                    PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                                    statementSupprVenteLim.setInt(1, idVente);
+                                    statementSupprVenteLim.executeUpdate();
+                                    // On supprime la vente
+                                    suppressionVente(idVente);
+                                    // On supprime le produit en faisant appel a la methode decrementationStock
+                                    decrementationStock(idProduit, quantiteProd);
+                                }
+                            else {
+                                PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                                statementSupprVenteLim.setInt(1, idVente);
+                                statementSupprVenteLim.executeUpdate();
+                                // On supprime la vente
+                                suppressionVente(idVente);
+                            }
+                            break;
+                        case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
+                            // est inférieur au prix de revient, mais on ne supprime pas le produit,
+                            // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
+                            PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                            statementQtProduit.setInt(1,idVente);
+                            ResultSet res4 = statementQtProduit.executeQuery();
+                            PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
+                            selectPrixRevient.setInt(1,idProduit);
+                            ResultSet prixRevient = selectPrixRevient.executeQuery();
+
+                            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
+                            statementOffreMax.setInt(1, idProduit);
+                            ResultSet resOffreMax = statementOffreMax.executeQuery();
+                            if (resOffreMax.next()) {
+                                float offreMax = resOffreMax.getFloat(2);
+                                if (offreMax == 0) {
+                                    offreMax = resOffreMax.getFloat(1);
+                                }
+                                if (prixRevient.next()) {
+                                    float prixRevientFloat = prixRevient.getFloat(1);
+                                    if (offreMax >= prixRevientFloat) {
+                                        // Si le vendeur va gagner de l'argent on peut effectuer la vente
+                                        // On commence par supprimer l'offre
+                                        suppressionAllOffres(idVente);
+                                        // On supprime ensuite les ventes à durée illimitée
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                                        statementSupprVenteIllim.setInt(1, idVente);
+                                        statementSupprVenteIllim.executeUpdate();
+                                        // On supprime ensuite la vente associée à l'offre
+                                        suppressionVente(idVente);
+                                        // On decrémente enfin le produit
+                                        if (res4.next()) {
+                                            int quantiteProd = res4.getInt(1);
+                                            decrementationStock(idProduit, quantiteProd);
+                                            // On decremente le nombre de produit vendu et c'est fini
+                                        }
+                                    } else {
+                                        // Si le vendeur ne va pas gagner d'argent on annule son offre
+                                        // On commence par supprimer les offres associées à la vente
+                                        suppressionAllOffres(idVente);
+                                        // On supprimme ensuite les offres Illimitée
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                                        statementSupprVenteIllim.setInt(1, idVente);
+                                        statementSupprVenteIllim.executeUpdate();
+                                        // On supprime ensuite la vente
+                                        suppressionVente(idVente);
+                                        // On doit maintenant gérer le produit
+                                        // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
+                                        // on va d'abord recup toutes les values du produit
+                                        PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                        selectValeursProduit.setInt(1,idProduit);
+                                        ResultSet resProd = selectValeursProduit.executeQuery();
+                                        while (resProd.next()) {
+                                            // On peut maintenant supprimer le produit
+                                            suppressionProduit(idProduit);
+                                            // On re-crée maintenant le produit
+                                            PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                            creeProp.setInt(1,resProd.getInt(1));
+                                            creeProp.setString(2,resProd.getString(2));
+                                            creeProp.setFloat(3,resProd.getFloat(3));
+                                            creeProp.setInt(4,resProd.getInt(4));
+                                            creeProp.setString(5, resProd.getString(5));
+                                            creeProp.setString(6, resProd.getString(6));
+                                            creeProp.executeUpdate();
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        Statement checkOffres2 = conn.createStatement();
+        // On gère le cas des ventes à durée illimitée
+        ResultSet resIllimitee = checkOffres2.executeQuery("SELECT idVente, Delai FROM VenteDureeIllimitee");
+        // On a besoin de l'idVente pour aller voir si la vente associée était révocable
+        while (resIllimitee.next()) {
+            int idVente = resIllimitee.getInt(1); // On récupère l'idVente
+            int delai = resIllimitee.getInt(2); // On récupère la date
+            Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(idVente);
+            if(DateHeureDerniereOffre == null){
+                break;
+            }
+            Timestamp dateHeureFinVente = ajouteDelai(DateHeureDerniereOffre, delai);
+            //On vérifie que l'offre n'est pas terminée
+            if (!compareTemps(dateHeureFinVente,actualDate)) {
+                // Si elle est terminée alors, on regarde si la vente associée était révocable
+                PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
+                statementRevocable.setInt(1,idVente);
+                ResultSet res2 = statementRevocable.executeQuery();
+                while (res2.next()) {
+                    int revoc = res2.getInt(1); // On va voir si la vente était révocable
+                    int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
+                    switch (revoc) {
+                        case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
+                            PreparedStatement statementProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                            statementProduit.setInt(1,idVente);
+                            ResultSet res3 = statementProduit.executeQuery();
+                            if (res3.next()) {
+                                int quantiteProd = res3.getInt(1);
+
+                                // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                // On supprime les offres.
+                                suppressionAllOffres(idVente);
+                                // On supprime les ventes à durée illimitée
+                                PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                statementSupprVenteLim.setInt(1,idVente);
+                                statementSupprVenteLim.executeUpdate();
+                                // On supprime la vente
+                                suppressionVente(idVente);
+                                // On supprime le produit en faisant appel a la methode decrementationStock
+                                decrementationStock(idProduit,quantiteProd);
+                            }
+                            else {
+                                PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                statementSupprVenteLim.setInt(1,idVente);
+                                statementSupprVenteLim.executeUpdate();
+                                // On supprime la vente
+                                suppressionVente(idVente);
+                            }
+                            break;
+                        case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
+                            // est inférieur au prix de revient, mais on ne supprime pas le produit,
+                            // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
+                            PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                            statementQtProduit.setInt(1,idVente);
+                            ResultSet res4 = statementQtProduit.executeQuery();
+                            PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
+                            selectPrixRevient.setInt(1,idProduit);
+                            ResultSet prixRevient = selectPrixRevient.executeQuery();
+                            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
+                            statementOffreMax.setInt(1, idProduit);
+                            ResultSet resOffreMax = statementOffreMax.executeQuery();
+                            if (resOffreMax.next()) {
+                                float offreMax = resOffreMax.getFloat(2);
+                                if (offreMax == 0) {
+                                    offreMax = resOffreMax.getFloat(1);
+                                }
+                                if (prixRevient.next()) {
+                                    float prixRevientFloat = prixRevient.getFloat(1);
+                                    if (offreMax >= prixRevientFloat) {
+                                        // Si le vendeur va gagner de l'argent on peut effectuer la vente
+                                        // On commence par supprimer l'offre
+                                        suppressionAllOffres(idVente);
+                                        // On supprime ensuite les ventes à durée illimitée
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                        statementSupprVenteIllim.setInt(1, idVente);
+                                        statementSupprVenteIllim.executeUpdate();
+                                        // On supprime ensuite la vente associée à l'offre
+                                        suppressionVente(idVente);
+                                        // On decrémente enfin le produit
+
+                                        if (res4.next()) {
+                                            int quantiteProd = res4.getInt(1);
+                                            decrementationStock(idProduit, quantiteProd);
+                                            // On decremente le nombre de produit vendu et c'est fini
+                                        }
+                                    } else {
+                                        // Si le vendeur ne va pas gagner d'argent on annule son offre
+                                        // On commence par supprimer les offres associées à la vente
+                                        suppressionAllOffres(idVente);
+                                        // On supprimme ensuite les offres Illimitée
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                        statementSupprVenteIllim.setInt(1, idVente);
+                                        statementSupprVenteIllim.executeUpdate();
+                                        // On supprime ensuite la vente
+                                        suppressionVente(idVente);
+                                        // On doit maintenant gérer le produit
+                                        // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
+                                        // on va d'abord recup toutes les values du produit
+                                        PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Sotck,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                        selectValeursProduit.setInt(1,idProduit);
+                                        ResultSet resProd = selectValeursProduit.executeQuery();
+                                        while (resProd.next()) {
+                                            // On peut maintenant supprimer le produit
+                                            suppressionProduit(idProduit);
+                                            // On re-crée maintenant le produit
+                                            PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                            creeProp.setInt(1,resProd.getInt(1));
+                                            creeProp.setString(2,resProd.getString(2));
+                                            creeProp.setFloat(3,resProd.getFloat(3));
+                                            creeProp.setInt(4,resProd.getInt(4));
+                                            creeProp.setString(5, resProd.getString(5));
+                                            creeProp.setString(6, resProd.getString(6));
+                                            creeProp.executeUpdate();
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        System.out.println("Base de données mise à jour");
     }
 }
