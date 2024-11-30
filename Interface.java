@@ -582,10 +582,10 @@ public class Interface {
     }
 
     public boolean IsDureeLimitee(int IdVente) throws SQLException {
-        PreparedStatement statementPrix = conn.prepareStatement("SELECT IDVENTE FROM VENTEDUREEILLIMITEE WHERE IDVENTE = ?");
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT IDVENTE FROM VENTEDUREELIMITEE WHERE IDVENTE = ?");
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
-        while(res.next() && res.getInt(1) >=0 ) {
+        if(res.next() && res.getInt(1) >=0 ) {
             return true;
         }
         return false;
@@ -668,7 +668,7 @@ public class Interface {
                         quantite = scanQuantite.nextInt();
                     }
                     ajouteOffre(idVente, mail, offre, quantite);
-                    decrementationStock(getIdProduit(produit),quantite);
+                    //decrementationStock(getIdProduit(produit),quantite);
                     System.out.println("Enchère effectuée");
                 }
             }
@@ -754,8 +754,8 @@ public class Interface {
         statementOffre.setInt(1, idProduit);
         ResultSet res= statementOffre.executeQuery();
         while(res.next()){
-            int idp = res.getInt(1);
-            suppressionVente(idp);
+            int idv = res.getInt(1);
+            suppressionVente(idv);
         }
         PreparedStatement statementProduit = conn.prepareStatement("DELETE FROM Produit WHERE idProduit = ?");
         statementProduit.setString(1, Integer.toString(idProduit));
@@ -1014,7 +1014,7 @@ public class Interface {
                                         ResultSet resProd = selectValeursProduit.executeQuery();
                                         while (resProd.next()) {
                                             // On peut maintenant supprimer le produit
-                                            suppressionData(idProduit);
+                                            suppressionProduit(idProduit);
                                             // On re-crée maintenant le produit
                                             PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
                                             creeProp.setInt(1,resProd.getInt(1));
