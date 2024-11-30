@@ -929,7 +929,7 @@ public class Interface {
                                         // On commence par supprimer l'offre
                                         suppressionAllOffres(idVente);
                                         // On supprime ensuite les ventes à durée illimitée
-                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
                                         statementSupprVenteIllim.setInt(1, idVente);
                                         statementSupprVenteIllim.executeUpdate();
                                         // On supprime ensuite la vente associée à l'offre
@@ -945,7 +945,7 @@ public class Interface {
                                         // On commence par supprimer les offres associées à la vente
                                         suppressionAllOffres(idVente);
                                         // On supprimme ensuite les offres Illimitée
-                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
                                         statementSupprVenteIllim.setInt(1, idVente);
                                         statementSupprVenteIllim.executeUpdate();
                                         // On supprime ensuite la vente
