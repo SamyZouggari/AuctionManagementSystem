@@ -184,7 +184,7 @@ public class Interface {
         System.out.println("Désireriez-vous que cette vente soit à durée limitée ou non ? Répondez par OUI  ou NON. ");
         Scanner scanLim = new Scanner(System.in);
         String limité = scanLim.nextLine();
-        PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle) VALUES (?,?,?,?,?,?,?,?)");
+        PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle, DateHeureVente) VALUES (?,?,?,?,?,?,?,?)");
         statement1.setInt(1, idVente);
         statement1.setFloat(2, prixDeDepart);
         statement1.setInt(3, revocableInt);
