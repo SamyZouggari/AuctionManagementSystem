@@ -903,9 +903,75 @@ public class Interface {
                                 // On supprime la vente
                                 suppressionVente(idVente);
                             }
+                            break;
                         case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
                             // est inférieur au prix de revient, mais on ne supprime pas le produit,
                             // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
+                            PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
+                            selectPrixRevient.setInt(1,idProduit);
+                            ResultSet prixRevient = selectPrixRevient.executeQuery();
+
+                            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
+                            statementOffreMax.setInt(1, idProduit);
+                            ResultSet resOffreMax = statementOffreMax.executeQuery();
+                            if (resOffreMax.next()) {
+                                float offreMax = resOffreMax.getFloat(2);
+                                if (offreMax == 0) {
+                                    offreMax = resOffreMax.getFloat(1);
+                                }
+                                if (prixRevient.next()) {
+                                    float prixRevientFloat = prixRevient.getFloat(1);
+                                    if (offreMax >= prixRevientFloat) {
+                                        // Si le vendeur va gagner de l'argent on peut effectuer la vente
+                                        // On commence par supprimer l'offre
+                                        suppressionAllOffres(idVente);
+                                        // On supprime ensuite les ventes à durée illimitée
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                        statementSupprVenteIllim.setInt(1, idVente);
+                                        statementSupprVenteIllim.executeUpdate();
+                                        // On supprime ensuite la vente associée à l'offre
+                                        suppressionVente(idVente);
+                                        // On decrémente enfin le produit
+                                        PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                                        statementQtProduit.setInt(1,idVente);
+                                        ResultSet res4 = statementQtProduit.executeQuery();
+                                        if (res4.next()) {
+                                            int quantiteProd = res4.getInt(1);
+                                            decrementationStock(idProduit, quantiteProd);
+                                            // On decremente le nombre de produit vendu et c'est fini
+                                        }
+                                    } else {
+                                        // Si le vendeur ne va pas gagner d'argent on annule son offre
+                                        // On commence par supprimer les offres associées à la vente
+                                        suppressionAllOffres(idVente);
+                                        // On supprimme ensuite les offres Illimitée
+                                        PreparedStatement statementSupprVenteIllim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                        statementSupprVenteIllim.setInt(1, idVente);
+                                        statementSupprVenteIllim.executeUpdate();
+                                        // On supprime ensuite la vente
+                                        suppressionVente(idVente);
+                                        // On doit maintenant gérer le produit
+                                        // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
+                                        // on va d'abord recup toutes les values du produit
+                                        PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Sotck,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                        selectValeursProduit.setInt(1,idProduit);
+                                        ResultSet resProd = selectValeursProduit.executeQuery();
+                                        while (resProd.next()) {
+                                            // On peut maintenant supprimer le produit
+                                            suppressionProduit(idProduit);
+                                            // On re-crée maintenant le produit
+                                            PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                            creeProp.setInt(1,resProd.getInt(1));
+                                            creeProp.setString(2,resProd.getString(2));
+                                            creeProp.setFloat(3,resProd.getFloat(3));
+                                            creeProp.setInt(4,resProd.getInt(4));
+                                            creeProp.setString(5, resProd.getString(5));
+                                            creeProp.setString(6, resProd.getString(6));
+                                            creeProp.executeUpdate();
+                                        }
+                                    }
+                                }
+                            }
                             break;
                     }
                 }
