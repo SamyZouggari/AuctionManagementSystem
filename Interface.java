@@ -353,16 +353,20 @@ public class Interface {
 
 
 
-    public void affichageVentes(int IdSalle) throws SQLException {
+    public boolean affichageVentes(int IdSalle) throws SQLException {
         // À durée limitée
         PreparedStatement statement1 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vd.DateHeureFin FROM Vente v JOIN VenteDureeLimitee vd on v.idvente = vd.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
         statement1.setInt(1, IdSalle);
         ResultSet res = statement1.executeQuery();
 
+        boolean flag = false;
+
         this.clearScreen();
 
         this.header("VENTES DANS LA SALLE N°" + IdSalle);
         while (res.next()) {
+
+            flag = true;
 
             int curr_vente = res.getInt(1);
             String curr_nom = res.getString(2);
@@ -393,6 +397,8 @@ public class Interface {
 
         while (res2.next()) {
 
+            flag = true;
+
             int curr_vente = res2.getInt(1);
             String curr_nom = res2.getString(2);
             int delai = res2.getInt(4);
@@ -416,7 +422,12 @@ public class Interface {
                 System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix+ " €. Date de fin de vente : "+ dateFinSansMilli);
             }
         }
+
+
+        return flag;
     }
+
+
     public void process_acheteur(String mail) throws SQLException{
         this.affichageSalles();
 
@@ -425,13 +436,22 @@ public class Interface {
         Scanner scannerNum = new Scanner(System.in);
         int num = scannerNum.nextInt();
 
-        this.affichageVentes(num);
+        if(this.affichageVentes(num)){
 
-        System.out.println("\n\nSur quelle vente voulez-vous enchérir ?");
-        Scanner scannerVente = new Scanner(System.in);
-        int idVente = scannerNum.nextInt();
+            System.out.println("\n\nSur quelle vente voulez-vous enchérir ?");
+            Scanner scannerVente = new Scanner(System.in);
+            int idVente = scannerNum.nextInt();
 
-        enchere(idVente, mail);
+            enchere(idVente, mail);
+        }
+        else{
+            System.out.println("\n\nIl n'y a aucune vente en cours dans cette salle. \nTapez 0 pour revenir au choix précédent");
+
+            Scanner scannerMenu = new Scanner(System.in);
+            int menu = scannerNum.nextInt();
+
+            if(menu == 0){process_acheteur(mail);}
+        }
     }   
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
