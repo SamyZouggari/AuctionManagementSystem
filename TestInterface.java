@@ -2,7 +2,7 @@ import java.sql.*;
 import java.util.List;
 import java.util.Scanner;
 
-// Si vous lancez le test, le nom du produit c'est Manteau
+// Si vous lancez le test, le nom du produit c'est Manteau,
 // appuyez sur l'achat psk la vente n'est pas codée encore
 // le prix de l'offre c'est un float et ça s'écrit avec une virgule pas un point
 public class TestInterface {
@@ -10,12 +10,13 @@ public class TestInterface {
     private static final String USER = "zouggars";
     private static final String PASSWD = "zouggars";
 
+
+
     public static void main(String[] args) throws ClassNotFoundException {
         try {
             
             //Enregistrement du pilote spécifique à oracle fourni par oracle.jdbc
             DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
-
             //Lancement d'une première connexion
             System.out.println("Connecting to the database...");
             Connection conn = DriverManager.getConnection(CONN_URL, USER, PASSWD);
@@ -23,7 +24,7 @@ public class TestInterface {
 
             Interface inter = new Interface();
             inter.checkVentesDescendantes();
-            inter.updateBD();
+            //inter.updateBD();
             inter.header("VENTE AUX ENCHERES");
             System.out.println("Bienvenue à Baie-electronique, veuillez vous identifier : ");
             System.out.println("Adresse mail : ");
@@ -58,18 +59,11 @@ public class TestInterface {
                 System.out.println("Vous avez bien été enregistré " + prenom);
                 System.out.println("----------------------------------------------");
             }
-
-
-
             System.out.println("Appuyer sur les touches suivantes");
-
             System.out.println("0 = Achat d'un produit");
             System.out.println("1 = Vente d'un produit");
-
-
             Scanner scannerNum = new Scanner(System.in);
             int num = scannerNum.nextInt();
-
             switch(num) {
                 case 0:
                     inter.process_acheteur(mail);
@@ -77,14 +71,14 @@ public class TestInterface {
                 case 1:
                     inter.process_vendeur();
                     break;
-            }
 
+            }
             //préparation de la requête
             //PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Utilisateur WHERE NOMUSER = ?");
-
         } catch( SQLException e )
     {
         e.printStackTrace();
     }
 }
 }
+
