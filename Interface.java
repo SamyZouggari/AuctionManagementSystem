@@ -213,7 +213,7 @@ public class Interface {
             statement1.executeUpdate();
             decrementationStock(idProduit, quantite, false);
             statement1.close();
-            int delai = 10;
+            int delai = 3;
             PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
             statement.setInt(1, idVente);
             statement.setInt(2, delai);
@@ -301,7 +301,7 @@ public class Interface {
                     }
                 }
             } else if (limité.equals("NON")) {
-                int delai = 10;
+                int delai = 3;
                 PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
                 statement.setInt(1, idVente);
                 statement.setInt(2, delai);
@@ -677,7 +677,7 @@ public class Interface {
     }
 
     public boolean IsOffreMultiple(int IdVente) throws SQLException {
-        PreparedStatement statementPrix = conn.prepareStatement("SELECT MONTANTE FROM VENTE WHERE IDVENTE = ?");
+        PreparedStatement statementPrix = conn.prepareStatement("SELECT OFFREMULTIPLE FROM VENTE WHERE IDVENTE = ?");
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
         while (res.next()) {
@@ -739,7 +739,7 @@ public class Interface {
             Scanner scanner = new Scanner(System.in);
             String rep = scanner.next();
             if (rep.equals("non")) {
-                //
+                this.process_acheteur(mail);
             } else {
                 if (montante.equals("descendante")) {
                     PreparedStatement statementPrix = conn.prepareStatement("SELECT QUANTITE FROM Vente WHERE IdVente = ?");
@@ -979,8 +979,9 @@ public class Interface {
             if (stockRestant - quantiteProduit == 0) {
                 if (suppression) {
                     suppressionProduit(idProduit);
+                    break;
                 }
-            } else {
+            }
                 // S'il reste encore du stock à la fin de l'achat, on décrémente simplement le stock
                 PreparedStatement statementAlter = conn.prepareStatement("UPDATE Produit SET Stock = ? WHERE Produit.idProduit = ?");
                 statementAlter.setInt(1, stockRestant - quantiteProduit);
@@ -988,10 +989,9 @@ public class Interface {
                 statementAlter.executeUpdate();
                 statementAlter.close();
             }
-        }
         statementStock.close();
         res.close();
-    }
+        }
 
     /*Méthode qui va être appelée lorsqu'un utilisateur fait une offre sur une vente descendante*/
     public void decrementationQuantite(int idVente, int quantiteProduit) throws SQLException {
@@ -1052,19 +1052,20 @@ public class Interface {
         ResultSet res = statementReste.executeQuery();
         try {
             while (res.next()) {
+                int quantiteVente = res.getInt(1);
                 int stock = res.getInt(3);
                 int maxPrixAchat = res.getInt(2);
                 if (maxPrixAchat == 0) {
                     statementReste.close();
                     res.close();
-                    return stock;
+                    return stock+quantiteVente;
                 } else {
                     PreparedStatement statementQuantite = conn.prepareStatement("SELECT QuantiteProduit FROM Offre WHERE PrixAchat = ?");
                     statementQuantite.setInt(1, maxPrixAchat);
                     ResultSet res2 = statementQuantite.executeQuery();
                     if (res2.next()) {
                         int quantite = res2.getInt(1);
-                        return stock + quantite;
+                        return stock + quantiteVente - quantite;
                     }
                 }
             }
