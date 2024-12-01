@@ -1074,6 +1074,24 @@ public class Interface {
         return 0;
     }
 
+    public void vainqueurVente(int idVente) throws SQLException {
+        PreparedStatement offreMax = conn.prepareStatement("SELECT Email FROM Offre WHERE idvente = ? and PrixAchat = (SELECT MAX(PrixAchat) FROM Offre WHERE idVente = ?)");
+        offreMax.setInt(1, idVente);
+        offreMax.setInt(2, idVente);
+        ResultSet res = offreMax.executeQuery();
+        while (res.next()) {
+            String email = res.getString(1); // On a récupéré le Mail de la personne qui a remporté l'enchère
+            // Maintenant il faut qu'on regarde quel produit la personne vient d'acheter
+            PreparedStatement produitAcheter = conn.prepareStatement("SELECT NomProduit FROM Produit p, Vente v WHERE idVente = ? and p.idProduit = v.idProduit");
+            produitAcheter.setInt(1, idVente);
+            ResultSet res1 = produitAcheter.executeQuery();
+            while (res1.next()) {
+                String nomProduit = res1.getString(1);
+                System.out.println(email + "a gagne l'enchere sur le produit " + nomProduit);
+            }
+        }
+    }
+
     /* Méthode qui va être appelée à chaque connection, et qui va verifier si des ventes se sont
      * terminées depuis la dernière connection, et en fonction va supprimer ces ventes, offres associées
      * et les produits vendus.
@@ -1092,6 +1110,7 @@ public class Interface {
 
             //On vérifie que l'offre n'est pas terminée
             if (!compareTemps(dateHeureFinVente, actualDate)) {
+                vainqueurVente(idVente);
                 // Si elle est terminée alors, on regarde si la vente associée était révocable
                 PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
                 statementRevocable.setInt(1, idVente);
@@ -1243,6 +1262,7 @@ public class Interface {
                 Timestamp dateHeureFinVente = ajouteDelai(DateHeureDerniereOffre, delai);
                 //On vérifie que l'offre n'est pas terminée
                 if (!compareTemps(dateHeureFinVente, actualDate)) {
+                    vainqueurVente(idVente);
                     // Si elle est terminée alors, on regarde si la vente associée était révocable
                     PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
                     statementRevocable.setInt(1, idVente);
