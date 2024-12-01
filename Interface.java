@@ -1047,32 +1047,60 @@ public class Interface {
     }
 
     public int resteVente(int idVente) throws SQLException {
-        PreparedStatement statementReste = conn.prepareStatement("SELECT Vente.Quantite, COALESCE(MAX(Offre.PRIXACHAT),0), Produit.Stock FROM Vente JOIN Offre ON Offre.IdVente=Vente.IdVente JOIN Produit ON Produit.idProduit=Vente.idProduit WHERE Vente.idVente = ? GROUP BY Produit.Stock, Vente.Quantite");
-        statementReste.setInt(1, idVente);
-        ResultSet res = statementReste.executeQuery();
-        try {
-            while (res.next()) {
-                int quantiteVente = res.getInt(1);
-                int stock = res.getInt(3);
-                int maxPrixAchat = res.getInt(2);
-                if (maxPrixAchat == 0) {
-                    statementReste.close();
-                    res.close();
-                    return stock+quantiteVente;
-                } else {
-                    PreparedStatement statementQuantite = conn.prepareStatement("SELECT QuantiteProduit FROM Offre WHERE PrixAchat = ?");
-                    statementQuantite.setInt(1, maxPrixAchat);
-                    ResultSet res2 = statementQuantite.executeQuery();
-                    if (res2.next()) {
-                        int quantite = res2.getInt(1);
-                        return stock + quantiteVente - quantite;
-                    }
+        int quantiteVente = 0;
+        int stock = 0;
+        int maxPrixAchat = 0;
+
+        // 1. Première requête pour récupérer Vente.Quantite et Produit.Stock
+        String query1 = "SELECT Vente.Quantite, Produit.Stock " +
+                "FROM Vente " +
+                "JOIN Produit ON Produit.idProduit = Vente.idProduit " +
+                "WHERE Vente.idVente = ?";
+        try (PreparedStatement statement1 = conn.prepareStatement(query1)) {
+            statement1.setInt(1, idVente);
+            try (ResultSet res1 = statement1.executeQuery()) {
+                if (res1.next()) {
+                    quantiteVente = res1.getInt(1);
+                    stock = res1.getInt(2);
                 }
             }
-        } catch (SQLException e) {
-            return 0;
         }
-        return 0;
+
+        // 2. Deuxième requête pour récupérer COALESCE(MAX(Offre.PRIXACHAT), 0)
+        String query2 = "SELECT COALESCE(MAX(Offre.PRIXACHAT), 0) AS MaxPrixAchat " +
+                "FROM Offre " +
+                "WHERE Offre.IdVente = ?";
+        try (PreparedStatement statement2 = conn.prepareStatement(query2)) {
+            statement2.setInt(1, idVente);
+            try (ResultSet res2 = statement2.executeQuery()) {
+                if (res2.next()) {
+                    maxPrixAchat = res2.getInt(1);
+                }
+            }
+        }
+
+        // 3. Si aucune offre n'existe (maxPrixAchat = 0), retourner stock + quantiteVente
+        if (maxPrixAchat == 0) {
+            return stock + quantiteVente;
+        }
+
+        // 4. Troisième requête pour récupérer QuantiteProduit pour l'offre avec maxPrixAchat
+        int quantiteMaxPrix = 0;
+        String query3 = "SELECT QuantiteProduit " +
+                "FROM Offre " +
+                "WHERE PrixAchat = ? AND IdVente = ?";
+        try (PreparedStatement statement3 = conn.prepareStatement(query3)) {
+            statement3.setInt(1, maxPrixAchat);
+            statement3.setInt(2, idVente);
+            try (ResultSet res3 = statement3.executeQuery()) {
+                if (res3.next()) {
+                    quantiteMaxPrix = res3.getInt("QuantiteProduit");
+                }
+            }
+        }
+
+        // 5. Calcul final : stock + quantiteVente - quantiteMaxPrix
+        return stock + quantiteVente - quantiteMaxPrix;
     }
 
     public void vainqueurVente(int idVente) throws SQLException {
