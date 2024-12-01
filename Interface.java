@@ -1020,25 +1020,24 @@ public class Interface {
                     PreparedStatement statementQuantite = conn.prepareStatement("SELECT QuantiteProduit FROM Offre WHERE PrixAchat = ?");
                     statementQuantite.setInt(1, maxPrixAchat);
                     ResultSet res2 = statementQuantite.executeQuery();
-                    if(res2.next()){
+                    if (res2.next()) {
                         int quantite = res2.getInt(1);
                         return stock - quantite;
                     }
                 }
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             return 0;
         }
         return 0;
     }
 
     /* Méthode qui va être appelée à chaque connection, et qui va verifier si des ventes se sont
-    * terminées depuis la dernière connection, et en fonction va supprimer ces ventes, offres associées
-    * et les produits vendus.
-    * Attention si la vente était révocable et que le prix d'achat de la dernière offre est inférieur
-    * au prix de revient, la vente et l'offre sont supprimées, mais pas le produit, on le sort simplement
-    * de la salle de vente */
+     * terminées depuis la dernière connection, et en fonction va supprimer ces ventes, offres associées
+     * et les produits vendus.
+     * Attention si la vente était révocable et que le prix d'achat de la dernière offre est inférieur
+     * au prix de revient, la vente et l'offre sont supprimées, mais pas le produit, on le sort simplement
+     * de la salle de vente */
     public void updateBD() throws SQLException {
         Timestamp actualDate = getDateActuelle();
         Statement checkOffres = conn.createStatement();
@@ -1050,50 +1049,52 @@ public class Interface {
             Timestamp dateHeureFinVente = res.getTimestamp(2); // On récupère la date
 
             //On vérifie que l'offre n'est pas terminée
-            if (!compareTemps(dateHeureFinVente,actualDate)) {
+            if (!compareTemps(dateHeureFinVente, actualDate)) {
                 // Si elle est terminée alors, on regarde si la vente associée était révocable
                 PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
-                statementRevocable.setInt(1,idVente);
+                statementRevocable.setInt(1, idVente);
                 ResultSet res2 = statementRevocable.executeQuery();
                 while (res2.next()) {
                     int revoc = res2.getInt(1); // On va voir si la vente était révocable
                     int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
                     switch (revoc) {
                         case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
-                            PreparedStatement statementProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
-                            statementProduit.setInt(1,idVente);
-                            ResultSet res3 = statementProduit.executeQuery();
-                                if (res3.next()) {
-                                    int quantiteProd = res3.getInt(1);
-
-                                    // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
-                                    // On supprime les offres.
-                                    suppressionAllOffres(idVente);
-                                    // On supprime les ventes à durée Limité
-                                    PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
-                                    statementSupprVenteLim.setInt(1, idVente);
-                                    statementSupprVenteLim.executeUpdate();
-                                    // On supprime la vente
-                                    suppressionVente(idVente);
-                                    // On supprime le produit en faisant appel a la methode decrementationStock
-                                    decrementationStock(idProduit, quantiteProd);
-                                }
-                            else {
-                                PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
-                                statementSupprVenteLim.setInt(1, idVente);
-                                statementSupprVenteLim.executeUpdate();
-                                // On supprime la vente
-                                suppressionVente(idVente);
+                            int nouvelleQuantite = resteVente(idVente);
+                            // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                            // On supprime les offres.
+                            suppressionAllOffres(idVente);
+                            // On supprime les ventes à durée Limité
+                            PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                            statementSupprVenteLim.setInt(1, idVente);
+                            statementSupprVenteLim.executeUpdate();
+                            // On supprime la vente
+                            suppressionVente(idVente);
+                            // On supprime le produit en faisant appel a la methode decrementationStock
+                            PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                            selectValeursProduit.setInt(1, idProduit);
+                            ResultSet resProd = selectValeursProduit.executeQuery();
+                            while (resProd.next()) {
+                                // On peut maintenant supprimer le produit
+                                suppressionProduit(idProduit);
+                                // On recrée maintenant le produit
+                                PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                creeProp.setInt(1, resProd.getInt(1));
+                                creeProp.setString(2, resProd.getString(2));
+                                creeProp.setFloat(3, resProd.getFloat(3));
+                                creeProp.setInt(4, nouvelleQuantite);
+                                creeProp.setString(5, resProd.getString(5));
+                                creeProp.setString(6, resProd.getString(6));
+                                creeProp.executeUpdate();
                             }
                             break;
                         case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
                             // est inférieur au prix de revient, mais on ne supprime pas le produit,
                             // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
                             PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
-                            statementQtProduit.setInt(1,idVente);
+                            statementQtProduit.setInt(1, idVente);
                             ResultSet res4 = statementQtProduit.executeQuery();
                             PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
-                            selectPrixRevient.setInt(1,idProduit);
+                            selectPrixRevient.setInt(1, idProduit);
                             ResultSet prixRevient = selectPrixRevient.executeQuery();
 
                             PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
@@ -1107,16 +1108,32 @@ public class Interface {
                                 if (prixRevient.next()) {
                                     float prixRevientFloat = prixRevient.getFloat(1);
                                     if (offreMax >= prixRevientFloat) {
-                                        // Si le vendeur va gagner de l'argent on peut effectuer la vente
-                                        // On commence par supprimer l'offre
+                                        int nouvelleQuantiteRevoc = resteVente(idVente);
+                                        // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                        // On supprime les offres.
                                         suppressionAllOffres(idVente);
-                                        // On supprime ensuite la vente associée à l'offre
+                                        // On supprime les ventes à durée Limité
+                                        PreparedStatement statementSupprVenteLimRevoc = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                                        statementSupprVenteLimRevoc.setInt(1, idVente);
+                                        statementSupprVenteLimRevoc.executeUpdate();
+                                        // On supprime la vente
                                         suppressionVente(idVente);
-                                        // On décrémente enfin le produit
-                                        if (res4.next()) {
-                                            int quantiteProd = res4.getInt(1);
-                                            decrementationStock(idProduit, quantiteProd);
-                                            // On décrémente le nombre de produits vendu et c'est fini
+                                        // On supprime le produit en faisant appel a la methode decrementationStock
+                                        PreparedStatement selectValeursProduitRevoc = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                        selectValeursProduitRevoc.setInt(1, idProduit);
+                                        ResultSet resProdRevoc = selectValeursProduitRevoc.executeQuery();
+                                        while (resProdRevoc.next()) {
+                                            // On peut maintenant supprimer le produit
+                                            suppressionProduit(idProduit);
+                                            // On recrée maintenant le produit
+                                            PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                            creeProp.setInt(1, resProdRevoc.getInt(1));
+                                            creeProp.setString(2, resProdRevoc.getString(2));
+                                            creeProp.setFloat(3, resProdRevoc.getFloat(3));
+                                            creeProp.setInt(4, nouvelleQuantiteRevoc);
+                                            creeProp.setString(5, resProdRevoc.getString(5));
+                                            creeProp.setString(6, resProdRevoc.getString(6));
+                                            creeProp.executeUpdate();
                                         }
                                     } else {
                                         // Si le vendeur ne va pas gagner d'argent, on annule son offre
@@ -1127,137 +1144,199 @@ public class Interface {
                                         // On doit maintenant gérer le produit
                                         // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
                                         // on va d'abord recup toutes les values du produit
-                                        PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
-                                        selectValeursProduit.setInt(1,idProduit);
-                                        ResultSet resProd = selectValeursProduit.executeQuery();
-                                        while (resProd.next()) {
-                                            // On peut maintenant supprimer le produit
-                                            suppressionProduit(idProduit);
-                                            // On re-crée maintenant le produit
-                                            PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
-                                            creeProp.setInt(1,resProd.getInt(1));
-                                            creeProp.setString(2,resProd.getString(2));
-                                            creeProp.setFloat(3,resProd.getFloat(3));
-                                            creeProp.setInt(4,resProd.getInt(4));
-                                            creeProp.setString(5, resProd.getString(5));
-                                            creeProp.setString(6, resProd.getString(6));
-                                            creeProp.executeUpdate();
+                                        PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
+                                        selectQuantite.setInt(1, idVente);
+                                        ResultSet resProdRevoc2 = selectQuantite.executeQuery();
+                                        int quantite = 0;
+                                        if (resProdRevoc2.next()) {
+                                            quantite = resProdRevoc2.getInt(1);
                                         }
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                }
-            }
-        }
-        Statement checkOffres2 = conn.createStatement();
-        // On gère le cas des ventes à durée illimitée
-        ResultSet resIllimitee = checkOffres2.executeQuery("SELECT idVente, Delai FROM VenteDureeIllimitee");
-        // On a besoin de l'idVente pour aller voir si la vente associée était révocable
-        while (resIllimitee.next()) {
-            int idVente = resIllimitee.getInt(1); // On récupère l'idVente
-            int delai = resIllimitee.getInt(2); // On récupère la date
-            Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(idVente);
-            if(DateHeureDerniereOffre == null){
-                break;
-            }
-            Timestamp dateHeureFinVente = ajouteDelai(DateHeureDerniereOffre, delai);
-            //On vérifie que l'offre n'est pas terminée
-            if (!compareTemps(dateHeureFinVente,actualDate)) {
-                // Si elle est terminée alors, on regarde si la vente associée était révocable
-                PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
-                statementRevocable.setInt(1,idVente);
-                ResultSet res2 = statementRevocable.executeQuery();
-                while (res2.next()) {
-                    int revoc = res2.getInt(1); // On va voir si la vente était révocable
-                    int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
-                    switch (revoc) {
-                        case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
-                            PreparedStatement statementProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
-                            statementProduit.setInt(1,idVente);
-                            ResultSet res3 = statementProduit.executeQuery();
-                            if (res3.next()) {
-                                int quantiteProd = res3.getInt(1);
 
-                                // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
-                                // On supprime les offres.
-                                suppressionAllOffres(idVente);
-                                // On supprime la vente
-                                suppressionVente(idVente);
-                                // On supprime le produit en faisant appel a la methode decrementationStock
-                                decrementationStock(idProduit,quantiteProd);
-                            }
-                            else {
-                                // On supprime la vente
-                                suppressionVente(idVente);
-                            }
-                            break;
-                        case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
-                            // est inférieur au prix de revient, mais on ne supprime pas le produit,
-                            // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
-                            PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
-                            statementQtProduit.setInt(1,idVente);
-                            ResultSet res4 = statementQtProduit.executeQuery();
-                            PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
-                            selectPrixRevient.setInt(1,idProduit);
-                            ResultSet prixRevient = selectPrixRevient.executeQuery();
-                            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
-                            statementOffreMax.setInt(1, idProduit);
-                            ResultSet resOffreMax = statementOffreMax.executeQuery();
-                            if (resOffreMax.next()) {
-                                float offreMax = resOffreMax.getFloat(2);
-                                if (offreMax == 0) {
-                                    offreMax = resOffreMax.getFloat(1);
-                                }
-                                if (prixRevient.next()) {
-                                    float prixRevientFloat = prixRevient.getFloat(1);
-                                    if (offreMax >= prixRevientFloat) {
-                                        // Si le vendeur va gagner de l'argent, on peut effectuer la vente
-                                        // On commence par supprimer l'offre
+                                        int nouvelleQuantiteRevoc = resteVente(idVente);
+                                        // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                        // On supprime les offres.
                                         suppressionAllOffres(idVente);
-                                        // On supprime ensuite la vente associée à l'offre
+                                        // On supprime les ventes à durée Limité
+                                        PreparedStatement statementSupprVenteLimRevoc = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+                                        statementSupprVenteLimRevoc.setInt(1, idVente);
+                                        statementSupprVenteLimRevoc.executeUpdate();
+                                        // On supprime la vente
                                         suppressionVente(idVente);
-                                        // On décrémente enfin le produit
-
-                                        if (res4.next()) {
-                                            int quantiteProd = res4.getInt(1);
-                                            decrementationStock(idProduit, quantiteProd);
-                                            // On décrémente le nombre de produits vendu et c'est fini
-                                        }
-                                    } else {
-                                        // Si le vendeur ne va pas gagner d'argent, on annule son offre
-                                        // On commence par supprimer les offres associées à la vente.
-                                        suppressionAllOffres(idVente);
-                                        // On supprime ensuite la vente
-                                        suppressionVente(idVente);
-                                        // On doit maintenant gérer le produit
-                                        // la seule solution au'on voit, c'est de supprimer le produit et de le recréer
-                                        // on va d'abord recup toutes les values du produit.
-                                        PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Sotck,NomCategorie,Email FROM Produit WHERE idProduit = ?");
-                                        selectValeursProduit.setInt(1,idProduit);
-                                        ResultSet resProd = selectValeursProduit.executeQuery();
-                                        while (resProd.next()) {
+                                        // On supprime le produit en faisant appel a la methode decrementationStock
+                                        PreparedStatement selectValeursProduitRevoc = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                        selectValeursProduitRevoc.setInt(1, idProduit);
+                                        ResultSet resProdRevoc = selectValeursProduitRevoc.executeQuery();
+                                        while (resProdRevoc.next()) {
                                             // On peut maintenant supprimer le produit
                                             suppressionProduit(idProduit);
                                             // On recrée maintenant le produit
                                             PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
-                                            creeProp.setInt(1,resProd.getInt(1));
-                                            creeProp.setString(2,resProd.getString(2));
-                                            creeProp.setFloat(3,resProd.getFloat(3));
-                                            creeProp.setInt(4,resProd.getInt(4));
-                                            creeProp.setString(5, resProd.getString(5));
-                                            creeProp.setString(6, resProd.getString(6));
+                                            creeProp.setInt(1, resProdRevoc.getInt(1));
+                                            creeProp.setString(2, resProdRevoc.getString(2));
+                                            creeProp.setFloat(3, resProdRevoc.getFloat(3));
+                                            creeProp.setInt(4, resProdRevoc.getInt(4) + quantite);
+                                            creeProp.setString(5, resProdRevoc.getString(5));
+                                            creeProp.setString(6, resProdRevoc.getString(6));
                                             creeProp.executeUpdate();
                                         }
                                     }
                                 }
+                                break;
                             }
-                            break;
                     }
                 }
             }
+            Statement checkOffres2 = conn.createStatement();
+            // On gère le cas des ventes à durée illimitée
+            ResultSet resIllimitee = checkOffres2.executeQuery("SELECT idVente, Delai FROM VenteDureeIllimitee");
+            // On a besoin de l'idVente pour aller voir si la vente associée était révocable
+            while (resIllimitee.next()) {
+                idVente = resIllimitee.getInt(1); // On récupère l'idVente
+                int delai = resIllimitee.getInt(2); // On récupère la date
+                Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(idVente);
+                if (DateHeureDerniereOffre == null) {
+                    break;
+                }
+                dateHeureFinVente = ajouteDelai(DateHeureDerniereOffre, delai);
+                //On vérifie que l'offre n'est pas terminée
+                if (!compareTemps(dateHeureFinVente, actualDate)) {
+                    // Si elle est terminée alors, on regarde si la vente associée était révocable
+                    PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
+                    statementRevocable.setInt(1, idVente);
+                    ResultSet res2 = statementRevocable.executeQuery();
+                    while (res2.next()) {
+                        int revoc = res2.getInt(1); // On va voir si la vente était révocable
+                        int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
+                        switch (revoc) {
+                            case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
+                                int nouvelleQuantite = resteVente(idVente);
+                                // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                // On supprime les offres.
+                                suppressionAllOffres(idVente);
+                                // On supprime les ventes à durée Limité
+                                PreparedStatement statementSupprVenteLim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                statementSupprVenteLim.setInt(1, idVente);
+                                statementSupprVenteLim.executeUpdate();
+                                // On supprime la vente
+                                suppressionVente(idVente);
+                                // On supprime le produit en faisant appel a la methode decrementationStock
+                                PreparedStatement selectValeursProduit = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                selectValeursProduit.setInt(1, idProduit);
+                                ResultSet resProd = selectValeursProduit.executeQuery();
+                                while (resProd.next()) {
+                                    // On peut maintenant supprimer le produit
+                                    suppressionProduit(idProduit);
+                                    // On recrée maintenant le produit
+                                    PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                    creeProp.setInt(1, resProd.getInt(1));
+                                    creeProp.setString(2, resProd.getString(2));
+                                    creeProp.setFloat(3, resProd.getFloat(3));
+                                    creeProp.setInt(4, nouvelleQuantite);
+                                    creeProp.setString(5, resProd.getString(5));
+                                    creeProp.setString(6, resProd.getString(6));
+                                    creeProp.executeUpdate();
+                                }
+                                break;
+                            case 1: // Si la vente était révocable On doit supprimer la vente et les offres si le prix d'achat
+                                // est inférieur au prix de revient, mais on ne supprime pas le produit,
+                                // Il faut réussir à sortir le produit de la salle de vente dans laquelle il est
+                                PreparedStatement statementQtProduit = conn.prepareStatement("SELECT o.QuantiteProduit FROM Vente v, Offre o WHERE o.idVente = ?");
+                                statementQtProduit.setInt(1, idVente);
+                                ResultSet res4 = statementQtProduit.executeQuery();
+                                PreparedStatement selectPrixRevient = conn.prepareStatement("SELECT Produit.PrixDeRevient FROM Produit WHERE idProduit = ?");
+                                selectPrixRevient.setInt(1, idProduit);
+                                ResultSet prixRevient = selectPrixRevient.executeQuery();
+                                PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
+                                statementOffreMax.setInt(1, idProduit);
+                                ResultSet resOffreMax = statementOffreMax.executeQuery();
+                                if (resOffreMax.next()) {
+                                    float offreMax = resOffreMax.getFloat(2);
+                                    if (offreMax == 0) {
+                                        offreMax = resOffreMax.getFloat(1);
+                                    }
+                                    if (prixRevient.next()) {
+                                        float prixRevientFloat = prixRevient.getFloat(1);
+                                        if (offreMax >= prixRevientFloat) {
+                                            int nouvelleQuantiteRevoc = resteVente(idVente);
+                                            // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                            // On supprime les offres.
+                                            suppressionAllOffres(idVente);
+                                            // On supprime les ventes à durée Limité
+                                            PreparedStatement statementSupprVenteLimRevoc = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                            statementSupprVenteLimRevoc.setInt(1, idVente);
+                                            statementSupprVenteLimRevoc.executeUpdate();
+                                            // On supprime la vente
+                                            suppressionVente(idVente);
+                                            // On supprime le produit en faisant appel a la methode decrementationStock
+                                            PreparedStatement selectValeursProduitRevoc = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                            selectValeursProduitRevoc.setInt(1, idProduit);
+                                            ResultSet resProdRevoc = selectValeursProduitRevoc.executeQuery();
+                                            while (resProdRevoc.next()) {
+                                                // On peut maintenant supprimer le produit
+                                                suppressionProduit(idProduit);
+                                                // On recrée maintenant le produit
+                                                PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                                creeProp.setInt(1, resProdRevoc.getInt(1));
+                                                creeProp.setString(2, resProdRevoc.getString(2));
+                                                creeProp.setFloat(3, resProdRevoc.getFloat(3));
+                                                creeProp.setInt(4, nouvelleQuantiteRevoc);
+                                                creeProp.setString(5, resProdRevoc.getString(5));
+                                                creeProp.setString(6, resProdRevoc.getString(6));
+                                                creeProp.executeUpdate();
+                                            }
+                                        } else {
+                                            // Si le vendeur ne va pas gagner d'argent, on annule son offre
+                                            // On commence par supprimer les offres associées à la vente.
+                                            suppressionAllOffres(idVente);
+                                            // On supprime ensuite la vente
+                                            suppressionVente(idVente);
+                                            // On doit maintenant gérer le produit
+                                            // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
+                                            // on va d'abord recup toutes les values du produit
+                                            PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
+                                            selectQuantite.setInt(1, idVente);
+                                            ResultSet resProdRevoc2 = selectQuantite.executeQuery();
+                                            int quantite = 0;
+                                            if (resProdRevoc2.next()) {
+                                                quantite = resProdRevoc2.getInt(1);
+                                            }
+
+                                            int nouvelleQuantiteRevoc = resteVente(idVente);
+                                            // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
+                                            // On supprime les offres.
+                                            suppressionAllOffres(idVente);
+                                            // On supprime les ventes à durée Limité
+                                            PreparedStatement statementSupprVenteLimRevoc = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+                                            statementSupprVenteLimRevoc.setInt(1, idVente);
+                                            statementSupprVenteLimRevoc.executeUpdate();
+                                            // On supprime la vente
+                                            suppressionVente(idVente);
+                                            // On supprime le produit en faisant appel a la methode decrementationStock
+                                            PreparedStatement selectValeursProduitRevoc = conn.prepareStatement("SELECT idProduit, NomProduit, PrixDeRevient,Stock,NomCategorie,Email FROM Produit WHERE idProduit = ?");
+                                            selectValeursProduitRevoc.setInt(1, idProduit);
+                                            ResultSet resProdRevoc = selectValeursProduitRevoc.executeQuery();
+                                            while (resProdRevoc.next()) {
+                                                // On peut maintenant supprimer le produit
+                                                suppressionProduit(idProduit);
+                                                // On recrée maintenant le produit
+                                                PreparedStatement creeProp = conn.prepareStatement("INSERT INTO Produit VALUES(?,?,?,?,?,?)");
+                                                creeProp.setInt(1, resProdRevoc.getInt(1));
+                                                creeProp.setString(2, resProdRevoc.getString(2));
+                                                creeProp.setFloat(3, resProdRevoc.getFloat(3));
+                                                creeProp.setInt(4, resProdRevoc.getInt(4) + quantite);
+                                                creeProp.setString(5, resProdRevoc.getString(5));
+                                                creeProp.setString(6, resProdRevoc.getString(6));
+                                                creeProp.executeUpdate();
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+            System.out.println("Base de données mise à jour");
         }
-        System.out.println("Base de données mise à jour");
     }
 }
