@@ -75,6 +75,7 @@ public class TestInterface {
                     break;
 
             }
+            conn.commit();
             conn.close();
             //préparation de la requête
             //PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Utilisateur WHERE NOMUSER = ?");

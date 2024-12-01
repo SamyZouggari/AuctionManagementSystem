@@ -1123,7 +1123,7 @@ public class Interface {
                                 creeProp.setInt(1, resProd.getInt(1));
                                 creeProp.setString(2, resProd.getString(2));
                                 creeProp.setFloat(3, resProd.getFloat(3));
-                                creeProp.setInt(4,nouvelleQuantite);
+                                creeProp.setInt(4, nouvelleQuantite);
                                 creeProp.setString(5, resProd.getString(5));
                                 creeProp.setString(6, resProd.getString(6));
                                 creeProp.executeUpdate();
@@ -1216,7 +1216,7 @@ public class Interface {
                                             creeProp.setInt(1, resProdRevoc.getInt(1));
                                             creeProp.setString(2, resProdRevoc.getString(2));
                                             creeProp.setFloat(3, resProdRevoc.getFloat(3));
-                                            creeProp.setInt(4,quantite);
+                                            creeProp.setInt(4, quantite);
                                             creeProp.setString(5, resProdRevoc.getString(5));
                                             creeProp.setString(6, resProdRevoc.getString(6));
                                             creeProp.executeUpdate();
@@ -1228,18 +1228,19 @@ public class Interface {
                     }
                 }
             }
+        }
             Statement checkOffres2 = conn.createStatement();
             // On gère le cas des ventes à durée illimitée
             ResultSet resIllimitee = checkOffres2.executeQuery("SELECT idVente, Delai FROM VenteDureeIllimitee");
             // On a besoin de l'idVente pour aller voir si la vente associée était révocable
             while (resIllimitee.next()) {
-                idVente = resIllimitee.getInt(1); // On récupère l'idVente
+                int idVente = resIllimitee.getInt(1); // On récupère l'idVente
                 int delai = resIllimitee.getInt(2); // On récupère la date
                 Timestamp DateHeureDerniereOffre = getDateHeureDerniereOffre(idVente);
                 if (DateHeureDerniereOffre == null) {
-                    break;
+                    continue;
                 }
-                dateHeureFinVente = ajouteDelai(DateHeureDerniereOffre, delai);
+                Timestamp dateHeureFinVente = ajouteDelai(DateHeureDerniereOffre, delai);
                 //On vérifie que l'offre n'est pas terminée
                 if (!compareTemps(dateHeureFinVente, actualDate)) {
                     // Si elle est terminée alors, on regarde si la vente associée était révocable
@@ -1384,14 +1385,11 @@ public class Interface {
                                         }
                                     }
                                 }
-                                break;
                         }
                     }
                 }
             }
             System.out.println("Base de données mise à jour");
-
-        }
         res.close();
+        }
     }
-}
