@@ -1227,7 +1227,7 @@ public class Interface {
                                             creeProp.executeUpdate();
                                         }
                                     } else {
-                                        PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
+                                        PreparedStatement selectQuantite = conn.prepareStatement("SELECT Vente.Quantite, Produit.Stock FROM Vente, Produit WHERE Vente.idVente = ? and Vente.idProduit = Produit.idProduit");
                                         selectQuantite.setInt(1, idVente);
                                         ResultSet resProdRevoc2 = selectQuantite.executeQuery();
                                         // Si le vendeur ne va pas gagner d'argent, on annule son offre
@@ -1239,8 +1239,10 @@ public class Interface {
                                         // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
                                         // on va d'abord recup toutes les values du produit
                                         int quantite = 0;
+                                        int stock = 0;
                                         if (resProdRevoc2.next()) {
                                             quantite = resProdRevoc2.getInt(1);
+                                            stock = resProdRevoc2.getInt(2);
                                         }
 
                                         int nouvelleQuantiteRevoc = resteVente(idVente);
@@ -1265,7 +1267,7 @@ public class Interface {
                                             creeProp.setInt(1, resProdRevoc.getInt(1));
                                             creeProp.setString(2, resProdRevoc.getString(2));
                                             creeProp.setFloat(3, resProdRevoc.getFloat(3));
-                                            creeProp.setInt(4, quantite);
+                                            creeProp.setInt(4, quantite + stock);
                                             creeProp.setString(5, resProdRevoc.getString(5));
                                             creeProp.setString(6, resProdRevoc.getString(6));
                                             creeProp.executeUpdate();
@@ -1386,7 +1388,7 @@ public class Interface {
                                                 statementSupprVenteLimRevoc.close();
                                             }
                                         } else {
-                                            PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
+                                            PreparedStatement selectQuantite = conn.prepareStatement("SELECT Vente.Quantite, Produit.Stock  FROM Vente, Stock WHERE Vente.idVente = ? and Produit.idProduit = Vente.idProduit");
                                             selectQuantite.setInt(1, idVente);
                                             ResultSet resProdRevoc2 = selectQuantite.executeQuery();
                                             // Si le vendeur ne va pas gagner d'argent, on annule son offre
@@ -1398,8 +1400,10 @@ public class Interface {
                                             // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
                                             // on va d'abord recup toutes les values du produit
                                             int quantite = 0;
+                                            int stock = 0;
                                             if (resProdRevoc2.next()) {
                                                 quantite = resProdRevoc2.getInt(1);
+                                                stock = resProdRevoc2.getInt(2);
                                             }
                                             // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
                                             // On supprime les offres.
@@ -1422,7 +1426,7 @@ public class Interface {
                                                 creeProp.setInt(1, resProdRevoc.getInt(1));
                                                 creeProp.setString(2, resProdRevoc.getString(2));
                                                 creeProp.setFloat(3, resProdRevoc.getFloat(3));
-                                                creeProp.setInt(4, quantite);
+                                                creeProp.setInt(4, quantite + stock);
                                                 creeProp.setString(5, resProdRevoc.getString(5));
                                                 creeProp.setString(6, resProdRevoc.getString(6));
                                                 creeProp.executeUpdate();
