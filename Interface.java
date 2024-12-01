@@ -6,6 +6,8 @@ import java.util.*;
 import objets.*;
 import oracle.jdbc.driver.OracleDriver;
 
+import javax.print.DocFlavor;
+
 import static java.lang.Float.parseFloat;
 import static java.lang.Integer.parseInt;
 
@@ -70,6 +72,9 @@ public class Interface {
         // catégorie qu'il souhaite vendre
         System.out.println("De quelle catégorie sont les produits que vous aimeriez vendre dans cette salle ?");
         Scanner scan = new Scanner(System.in);
+//        if(scan.nextLine()){
+//
+//        }
         String categorie = scan.nextLine();
 
         // Vérifier si des salles existent déjà pour cette catégorie
@@ -144,28 +149,47 @@ public class Interface {
         System.out.println("Vente " + idVente);
         Scanner scan = new Scanner(System.in);
         System.out.println("A quel prix de départ voulez-vous commencez cette vente ?");
+        while (!scan.hasNextFloat()) {
+            System.out.println("Veuillez entrer un nombre valide (format décimal).");
+            scan = new Scanner(System.in);
+        }
         Float prixDeDepart = scan.nextFloat();
         this.affichageSalles(categorie);
         System.out.println("\n"+ "Voici les salles dans lesquelles vous pouvez vendre votre produit. Entrez l'ID de la salle dans laquelle vous souhaitez vendre votre produit.");
         //affiche les salles possibles, l'utilisateur rentre un numero de salle
         //besoin d'ajouter la verification que la salle choisie ait la même catégorie que le produit
+        while (!scan.hasNextInt()) {
+            System.out.println("Veuillez entrer un nombre valide.");
+            scan = new Scanner(System.in);
+        }
         int idSalle = scan.nextInt();
         System.out.println("Combien voulez-vous en vendre ?");
+        while (!scan.hasNextInt()) {
+            System.out.println("Veuillez entrer un nombre valide.");
+            scan = new Scanner(System.in);
+        }
         int quantite = scan.nextInt();
         System.out.println("Désireriez-vous que cette vente soit révocable ou non ? Répondez par OUI ou NON.");
         Scanner scanRev = new Scanner(System.in);
         String revocable = scanRev.nextLine();
         int revocableInt = 0;
+        while (!revocable.equals("OUI") && !revocable.equals("NON")) {
+            System.out.println("Veuillez répondre par OUI ou par NON.");
+            Scanner scanRevBoucle = new Scanner(System.in);
+            revocable = scanRevBoucle.nextLine();
+        }
         if (revocable.equals("OUI")) {
             revocableInt = 1;
-        }
-        else if (revocable.equals("NON")) {
-            revocableInt = 0;
         }
         System.out.println("Désireriez-vous que cette vente soit montante ou descendante ? Répondez par MONTANTE ou DESCENDANTE.");
         Scanner scanMon = new Scanner(System.in);
         String montante = scanMon.nextLine();
         int montanteInt = 1;
+        while (!montante.equals("MONTANTE") && !montante.equals("DESCENDANTE")) {
+            System.out.println("Veuillez répondre par MONTANTE ou DESCENDANTE.");
+            Scanner scanMonBoucle = new Scanner(System.in);
+            montante = scanMonBoucle.nextLine();
+        }
         if (montante.equals("MONTANTE")) {
             montanteInt = 1;
         } else if (montante.equals("DESCENDANTE")) {
@@ -175,6 +199,11 @@ public class Interface {
         Scanner scanMult = new Scanner(System.in);
         String multiple = scanMult.nextLine();
         scan.nextLine();
+        while (!multiple.equals("OUI") && !multiple.equals("NON")) {
+            System.out.println("Veuillez répondre par OUI ou par NON.");
+            Scanner scanMultBoucle = new Scanner(System.in);
+            multiple = scanMultBoucle.nextLine();
+        }
         int multipleInt = 1;
         if (multiple.equals("OUI")) {
             multipleInt = 1;
@@ -184,6 +213,11 @@ public class Interface {
         System.out.println("Désireriez-vous que cette vente soit à durée limitée ou non ? Répondez par OUI  ou NON. ");
         Scanner scanLim = new Scanner(System.in);
         String limité = scanLim.nextLine();
+        while (!limité.equals("OUI") && !limité.equals("NON")) {
+            System.out.println("Veuillez répondre par OUI ou par NON.");
+            Scanner scanLimBoucle = new Scanner(System.in);
+            limité = scanLimBoucle.nextLine();
+        }
         PreparedStatement statement1 = conn.prepareStatement("INSERT INTO Vente (IdVente, PrixDepart, Revocable, Montante, OffreMultiple, IdProduit, IdSalle, DateHeureVente) VALUES (?,?,?,?,?,?,?,?)");
         statement1.setInt(1, idVente);
         statement1.setFloat(2, prixDeDepart);
@@ -195,14 +229,23 @@ public class Interface {
         statement1.setTimestamp(8,getDateActuelle());
         statement1.executeUpdate();
         if (limité.equals("OUI")) {
-            System.out.println("Entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");
-            Scanner scan6 = new Scanner(System.in);
-            String DateHeureFin = scan6.nextLine();
-            System.out.println(DateHeureFin);
-            PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeLimitee (IdVente, DateHeureFin) VALUES (?,TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))");
-            statement.setInt(1, idVente);
-            statement.setString(2, DateHeureFin);
-            statement.executeUpdate();
+            boolean success=false;
+            while(!success){
+                try {
+                    System.out.println("Entrez la date et l'heure de fin sous forme AAAA-MM-JJ HH:MI:SS");
+                    Scanner scan6 = new Scanner(System.in);
+                    String DateHeureFin = scan6.nextLine();
+                    System.out.println(DateHeureFin);
+                    PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeLimitee (IdVente, DateHeureFin) VALUES (?,TO_TIMESTAMP(?, 'YYYY-MM-DD HH24:MI:SS'))");
+                    statement.setInt(1, idVente);
+                    statement.setString(2, DateHeureFin);
+                    statement.executeUpdate();
+                    success=true;
+                }
+                catch (SQLException e) {
+                    System.out.println("Vous n'avez pas respecté le format AAAA-MM-JJ HH:MI:SS !");
+                }
+            }
         } else if (limité.equals("NON")) {
             int delai = 10;
             PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
@@ -613,83 +656,106 @@ public class Interface {
 
     public void enchere(int idVente, String mail) throws SQLException {
         System.out.println("----------------------------------------------------");
-        PreparedStatement statementProduit = conn.prepareStatement("SELECT NomProduit FROM Produit JOIN Vente on Vente.idProduit=Produit.idProduit WHERE Vente.idVente = ?");
-        statementProduit.setInt(1, idVente);
-        ResultSet resProduit = statementProduit.executeQuery();
-        String produit="";
-        if(resProduit.next()) {
-            produit = resProduit.getString(1);
-        }
-
-        System.out.println("Bienvenue dans l'enchère du produit correspondant : " + produit);
-        String rev;
-        String montante;
-        String lim;
-
-        if(IsMontante(getIdVente(produit))) {
-            montante = "montante";
+        // L'utilisateur ne peut enchérir qu'une seule fois si la vente n'est pas à offre multiple
+        if(IsOffreMultiple(idVente)) {
+            PreparedStatement VerifUserOffre = conn.prepareStatement("SELECT EMAIL FROM OFFRE WHERE IDVENTE = ?");
+            VerifUserOffre.setInt(1, idVente);
+            ResultSet res = VerifUserOffre.executeQuery();
+            while(res.next()) {
+                String email = res.getString(1);
+                if(email.equals(mail)) {
+                    System.out.println("Vous ne pouvez enchérir qu'une seule fois sur cette vente");
+                }
+            }
         }
         else {
-            montante = "non montante";
-        }
+            PreparedStatement statementProduit = conn.prepareStatement("SELECT NomProduit FROM Produit JOIN Vente on Vente.idProduit=Produit.idProduit WHERE Vente.idVente = ?");
+            statementProduit.setInt(1, idVente);
+            ResultSet resProduit = statementProduit.executeQuery();
+            String produit = "";
+            if (resProduit.next()) {
+                produit = resProduit.getString(1);
+            }
 
-        System.out.println("La vente est "+ montante+", est-ce que cela vous convient? (oui/non) :" );
-        Scanner scanner = new Scanner(System.in);
-        String rep = scanner.next();
-        if (rep.equals("non")){
-            //
-        }
-        else {
-            PreparedStatement statementPrix = conn.prepareStatement("SELECT STOCK FROM Produit WHERE NOMPRODUIT = ?");
-            statementPrix.setString(1, produit);
-            ResultSet res = statementPrix.executeQuery();
-            while (res.next()) {
-                // cas où il y a déjà des offres
-                PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
-                statementOffreMax.setInt(1, getIdProduit(produit));
-                ResultSet resOffreMax = statementOffreMax.executeQuery();
-                if (resOffreMax.next()) {
-                    float offreMax = resOffreMax.getFloat(2);
-                    if(offreMax==0){
-                        offreMax = resOffreMax.getFloat(1);
-                    }
-                    int stock = res.getInt(1);
-                    System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
-                    // Vérification suivant si l'offre est montante ou pas
+            System.out.println("Bienvenue dans l'enchère du produit correspondant : " + produit);
+            String montante;
 
-                    System.out.println("Quelle est votre offre (en euros) ? ");
-                    Scanner scanOffre = new Scanner(System.in);
-                    float offre = scanOffre.nextFloat();
-                    if(IsMontante(getIdVente(produit))) {
-                        while( offre <= offreMax){
-                            System.out.println("L'offre est montante, vous ne pouvez pas réaliser une offre strictement supérieure au prix de la dernière offre");
-                            System.out.println("Quelle est votre offre (en euros) ? ");
-                            scanOffre = new Scanner(System.in);
-                            offre = scanOffre.nextFloat();
+            if (IsMontante(getIdVente(produit))) {
+                montante = "montante";
+            } else {
+                montante = "descendante";
+            }
+
+            System.out.println("La vente est " + montante + ", est-ce que cela vous convient? (oui/non) :");
+            Scanner scanner = new Scanner(System.in);
+            String rep = scanner.next();
+            if (rep.equals("non")) {
+                //
+            } else {
+                if (montante.equals("descendante")) {
+                    PreparedStatement statementPrix = conn.prepareStatement("SELECT STOCK FROM Produit WHERE NOMPRODUIT = ?");
+                    statementPrix.setString(1, produit);
+                    ResultSet res = statementPrix.executeQuery();
+                    while (res.next()) {
+                        // cas où il y a déjà des offres
+                        PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART FROM VENTE WHERE VENTE.IDPRODUIT = ?");
+                        statementOffreMax.setInt(1, getIdProduit(produit));
+                        ResultSet resOffreMax = statementOffreMax.executeQuery();
+                        if (resOffreMax.next()) {
+                            int stock = res.getInt(1);
+                            int prixDepart = resOffreMax.getInt(1);
+                            System.out.println("Il y a " + stock + " " + produit + ", le prix du produit est de : " + prixDepart + " euros");
+                            // Vérification suivant si l'offre est montante ou pas
+                            System.out.println("Voulez-vous soumettre votre offre ? (OUI/NON");
+                            Scanner scanOffre = new Scanner(System.in);
+                            String offre = scanOffre.nextLine();
+                            if (offre.equals("OUI")) {
+                                suppressionVente(idVente);
+                                System.out.println("Vous avez remporté l'enchère !");
+                            }
                         }
                     }
-                    else {
-                        while( offre >= offreMax){
-                            System.out.println("L'offre est descendante, vous ne pouvez pas réaliser une offre strictement inférieure au prix de la dernière offre");
+                } else {
+                    PreparedStatement statementPrix = conn.prepareStatement("SELECT STOCK FROM Produit WHERE NOMPRODUIT = ?");
+                    statementPrix.setString(1, produit);
+                    ResultSet res = statementPrix.executeQuery();
+                    while (res.next()) {
+                        // cas où il y a déjà des offres
+                        PreparedStatement statementOffreMax = conn.prepareStatement("SELECT VENTE.PRIXDEPART, COALESCE(MAX(OFFRE.PrixAchat),0) FROM VENTE LEFT JOIN OFFRE ON OFFRE.IDVENTE = VENTE.IDVENTE WHERE VENTE.IDPRODUIT = ? GROUP BY VENTE.PRIXDEPART");
+                        statementOffreMax.setInt(1, getIdProduit(produit));
+                        ResultSet resOffreMax = statementOffreMax.executeQuery();
+                        if (resOffreMax.next()) {
+                            float offreMax = resOffreMax.getFloat(2);
+                            if (offreMax == 0) {
+                                offreMax = resOffreMax.getFloat(1);
+                            }
+                            int stock = res.getInt(1);
+                            System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
+                            // Vérification suivant si l'offre est montante ou pas
                             System.out.println("Quelle est votre offre (en euros) ? ");
-                            scanOffre = new Scanner(System.in);
-                            offre = scanOffre.nextFloat();
+                            Scanner scanOffre = new Scanner(System.in);
+                            float offre = scanOffre.nextFloat();
+                            while (offre <= offreMax) {
+                                System.out.println("L'offre est montante, vous ne pouvez pas réaliser une offre strictement supérieure au prix de la dernière offre");
+                                System.out.println("Quelle est votre offre (en euros) ? ");
+                                scanOffre = new Scanner(System.in);
+                                offre = scanOffre.nextFloat();
+                            }
+
+                            // Vérification qu'il y a assez de produits en stock
+                            System.out.println("Combien voulez-vous en acheter ? ");
+                            Scanner scanQuantite = new Scanner(System.in);
+                            int quantite = scanQuantite.nextInt();
+                            while (quantite > stock) {
+                                System.out.println("Il n'y a pas assez de produits en stock");
+                                System.out.println("Combien voulez-vous en acheter ? ");
+                                scanQuantite = new Scanner(System.in);
+                                quantite = scanQuantite.nextInt();
+                            }
+                            ajouteOffre(idVente, mail, offre, quantite);
+                            System.out.println("Enchère effectuée");
                         }
                     }
-
-                    // Vérification qu'il y a assez de produits en stock
-                    System.out.println("Combien voulez-vous en acheter ? ");
-                    Scanner scanQuantite = new Scanner(System.in);
-                    int quantite = scanQuantite.nextInt();
-                    while (quantite > stock) {
-                        System.out.println("Il n'y a pas assez de produits en stock");
-                        System.out.println("Combien voulez-vous en acheter ? ");
-                        scanQuantite = new Scanner(System.in);
-                        quantite = scanQuantite.nextInt();
-                    }
-                    ajouteOffre(idVente, mail, offre, quantite);
-                    //decrementationStock(getIdProduit(produit),quantite);
-                    System.out.println("Enchère effectuée");
                 }
             }
         }
@@ -700,17 +766,12 @@ public class Interface {
         return timestamp1.after(timestamp2);
     }
 
-    public static String compareTimestamps(Timestamp timestamp1, Timestamp timestamp2) {
+    public int compareTimestampsMinutes(Timestamp timestamp1, Timestamp timestamp2) {
         // Calcul de la différence absolue en millisecondes
         long diffInMillis = Math.abs(timestamp2.getTime() - timestamp1.getTime());
 
-        // Conversion en jours, heures, minutes et secondes
-        long days = TimeUnit.MILLISECONDS.toDays(diffInMillis);
-        long hours = TimeUnit.MILLISECONDS.toHours(diffInMillis) % 24;
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(diffInMillis) % 60;
-
         // Retourner la différence sous forme de chaîne
-        return String.format("%d jours, %d heures, %d minutes, %d secondes", days, hours, minutes);
+        return (int) TimeUnit.MILLISECONDS.toMinutes(diffInMillis) % 60;
     }
 
 
@@ -866,6 +927,26 @@ public class Interface {
                 PreparedStatement statementAlter = conn.prepareStatement("UPDATE Produit SET Stock = ? WHERE Produit.idProduit = ?");
                 statementAlter.setInt(1,stockRestant - quantiteProduit);
                 statementAlter.setInt(2,idProduit);
+                statementAlter.executeUpdate();
+            }
+        }
+    }
+
+
+
+    public void checkVentesDescendantes() throws SQLException {
+        PreparedStatement statementVentesDescendantes = conn.prepareStatement("SELECT Montante, dateHeureVente, idVente, PrixDepart FROM Vente");
+        ResultSet res = statementVentesDescendantes.executeQuery();
+        while(res.next()){
+            int montante = res.getInt(1);
+            if(montante == 0){
+                int idVente= res.getInt(3);
+                int prixDepart = res.getInt(4);
+                Timestamp dateHeureVente = res.getTimestamp(2);
+                int diffMinutes = compareTimestampsMinutes(dateHeureVente, getDateActuelle());
+                PreparedStatement statementAlter = conn.prepareStatement("UPDATE Vente SET PrixDepart = ? WHERE Vente.idVente = ?");
+                statementAlter.setInt(1,prixDepart - diffMinutes);
+                statementAlter.setInt(2, idVente);
                 statementAlter.executeUpdate();
             }
         }

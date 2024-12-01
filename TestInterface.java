@@ -22,9 +22,10 @@ public class TestInterface {
             System.out.println("connected.");
 
             Interface inter = new Interface();
+            inter.checkVentesDescendantes();
             inter.updateBD();
             inter.header("VENTE AUX ENCHERES");
-            System.out.println("Bonjour, veuillez vous identifier : ");
+            System.out.println("Bienvenue à Baie-electronique, veuillez vous identifier : ");
             System.out.println("Adresse mail : ");
             Scanner scannerMail = new Scanner(System.in);
             String mail = scannerMail.nextLine();
