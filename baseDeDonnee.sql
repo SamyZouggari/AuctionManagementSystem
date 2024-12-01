@@ -62,7 +62,7 @@ CREATE TABLE VenteDureeIllimitee (
 CREATE TABLE Propose (
     NomCategorie VARCHAR(100) NOT NULL,
     IdSalle INT NOT NULL,
-    CONSTRAINT K_Propose PRIMARY KEY (IdSalle),
+    CONSTRAINT K_Propose PRIMARY KEY (NomCategorie, IdSalle),
     CONSTRAINT F_IdSalle_Propose FOREIGN KEY (IdSalle) REFERENCES SalleDeVente(IdSalle),
     CONSTRAINT F_NomCategorie_Propose FOREIGN KEY (NomCategorie) REFERENCES CategorieProduit(NomCategorie)
 );

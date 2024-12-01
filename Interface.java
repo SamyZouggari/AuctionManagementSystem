@@ -1111,7 +1111,6 @@ public class Interface {
 
             //On vérifie que l'offre n'est pas terminée
             if (!compareTemps(dateHeureFinVente, actualDate)) {
-                vainqueurVente(idVente);
                 // Si elle est terminée alors, on regarde si la vente associée était révocable
                 PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
                 statementRevocable.setInt(1, idVente);
@@ -1121,6 +1120,7 @@ public class Interface {
                     int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
                     switch (revoc) {
                         case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
+                            vainqueurVente(idVente);
                             int nouvelleQuantite = resteVente(idVente);
                             // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
                             // On supprime les offres.
@@ -1170,6 +1170,7 @@ public class Interface {
                                 if (prixRevient.next()) {
                                     float prixRevientFloat = prixRevient.getFloat(1);
                                     if (offreMax >= prixRevientFloat) {
+                                        vainqueurVente(idVente);
                                         int nouvelleQuantiteRevoc = resteVente(idVente);
                                         // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
                                         // On supprime les offres.
@@ -1263,7 +1264,6 @@ public class Interface {
                 Timestamp dateHeureFinVente = ajouteDelai(DateHeureDerniereOffre, delai);
                 //On vérifie que l'offre n'est pas terminée
                 if (!compareTemps(dateHeureFinVente, actualDate)) {
-                    vainqueurVente(idVente);
                     // Si elle est terminée alors, on regarde si la vente associée était révocable
                     PreparedStatement statementRevocable = conn.prepareStatement("SELECT Vente.Revocable, Vente.idProduit FROM Vente WHERE idVente = ?");
                     statementRevocable.setInt(1, idVente);
@@ -1273,6 +1273,7 @@ public class Interface {
                         int idProduit = res2.getInt(2); // On récupère l'idProduit du produit vendu
                         switch (revoc) {
                             case 0: // Si la vente n'était pas révocable on supprime la vente, le produit vendu et les offres
+                                vainqueurVente(idVente);
                                 int nouvelleQuantite = resteVente(idVente);
                                 // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
                                 // On supprime les offres.
@@ -1321,6 +1322,7 @@ public class Interface {
                                     if (prixRevient.next()) {
                                         float prixRevientFloat = prixRevient.getFloat(1);
                                         if (offreMax >= prixRevientFloat) {
+                                            vainqueurVente(idVente);
                                             int nouvelleQuantiteRevoc = resteVente(idVente);
                                             // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
                                             // On supprime les offres.
