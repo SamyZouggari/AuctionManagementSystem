@@ -59,22 +59,11 @@ public class Interface {
         this.compteurIdProduit += 1;
     }
 
-//    public void OuvrirSalle() {
-//        System.out.println("De quelle catégorie sont les produits que vous aimereriez vendre dans cette salle ?");
-//        Scanner scan = new Scanner(System.in);
-//        String categorie = scan.next();
-//        scan.nextLine();
-//        List new_list = new ArrayList<Vente>();
-//        Salle nouvelleSalle = new Salle(new_list, categorie);
-//    }
 
     public void OuvrirSalle() {
         // catégorie qu'il souhaite vendre
         System.out.println("De quelle catégorie sont les produits que vous aimeriez vendre dans cette salle ?");
         Scanner scan = new Scanner(System.in);
-//        if(scan.nextLine()){
-//
-//        }
         String categorie = scan.nextLine();
 
         // Vérifier si des salles existent déjà pour cette catégorie
@@ -89,12 +78,12 @@ public class Interface {
                     int idNouvelleSalle = creerNouvelleSalle();
                     ajouterSalleCategorie(idNouvelleSalle, categorie);
 
-                    System.out.println("Nouvelle salle créée avec succès avec l'ID " + idNouvelleSalle);
+                    System.out.println("Nouvelle salle créée avec succès avec l'ID " + idNouvelleSalle". Entrez cet ID.");
                 } else {
                     System.out.println("Aucune salle n'a été créée.");
                 }
             } else {
-                System.out.println("Voici les salles disponibles.");
+                System.out.println("Voici les salles disponibles. Entrez l'ID de la salle dans laquelle vous souhaitez vendre votre produit.");
                 this.affichageSalles(categorie);
             }
         } catch (SQLException e) {
@@ -104,7 +93,7 @@ public class Interface {
 
 
     public boolean sallesExistantesPourCategorie(String categorie)throws SQLException{
-        PreparedStatement statement = conn.prepareStatement("SELECT COUNT FROM Propose WHERE NomCategorie = ?");
+        PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM Propose WHERE NomCategorie = ?");
         statement.setString(1, categorie);
         ResultSet res = statement.executeQuery();
 
@@ -116,28 +105,35 @@ public class Interface {
 
 
     public int creerNouvelleSalle() throws  SQLException{
-        PreparedStatement maxIdSalle = conn.prepareStatement("SELECT MAX(IdSalle) FROM SalleDeVente");
+        // Obtenir le nouvel ID de salle en incrémentant le MAX(IdSalle)
+        PreparedStatement maxIdSalle = conn.prepareStatement("SELECT COALESCE(MAX(IdSalle), 0) + 1 AS NewIdSalle FROM SalleDeVente");
         ResultSet rs = maxIdSalle.executeQuery();
 
         int newIdSalle = 1;
         if (rs.next()) {
-            newIdSalle = rs.getInt(1) + 1;
+            newIdSalle = rs.getInt("NewIdSalle");
         }
 
+        // Insérer la nouvelle salle
         PreparedStatement statement = conn.prepareStatement("INSERT INTO SalleDeVente(IdSalle) VALUES (?)");
         statement.setInt(1, newIdSalle);
-        int res = statement.executeUpdate();
+        statement.executeUpdate();
 
-        if (res == 1) {
-            return 1; // Retourne 1 si des salles existent
-        }
-        else{
-            throw new SQLException("Erreur lors de la génération de la salle");
-        }
+        return newIdSalle;
     };
 
     public void ajouterSalleCategorie(int idNouvelleSalle, String categorie)throws SQLException{
-        PreparedStatement statement = conn.prepareStatement("INSERT INTO Propose(NomCategorie, IdSalle) VALUES (?;?)");
+      // Vérifier si la salle existe déjà dans Propose
+        PreparedStatement checkStatement = conn.prepareStatement("SELECT COUNT(*) FROM Propose WHERE IdSalle = ?");
+        checkStatement.setInt(1, idNouvelleSalle);
+        ResultSet res = checkStatement.executeQuery();
+        
+        if (res.next() && res.getInt(1) > 0) { // il existe au moins une salle
+            throw new SQLException("La salle avec l'ID " + idNouvelleSalle + " est déjà associée à une catégorie.");
+        }
+
+        // Si aucune violation, insérer dans Propose
+        PreparedStatement statement = conn.prepareStatement("INSERT INTO Propose (NomCategorie, IdSalle) VALUES (?, ?)");
         statement.setString(1, categorie);
         statement.setInt(2, idNouvelleSalle);
         statement.executeUpdate();
@@ -154,10 +150,8 @@ public class Interface {
             scan = new Scanner(System.in);
         }
         Float prixDeDepart = scan.nextFloat();
-        this.affichageSalles(categorie);
-        System.out.println("\n"+ "Voici les salles dans lesquelles vous pouvez vendre votre produit. Entrez l'ID de la salle dans laquelle vous souhaitez vendre votre produit.");
-        //affiche les salles possibles, l'utilisateur rentre un numero de salle
-        //besoin d'ajouter la verification que la salle choisie ait la même catégorie que le produit
+        this.OuvrirSalle();
+        
         while (!scan.hasNextInt()) {
             System.out.println("Veuillez entrer un nombre valide.");
             scan = new Scanner(System.in);
