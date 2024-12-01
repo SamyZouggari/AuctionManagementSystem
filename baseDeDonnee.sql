@@ -40,6 +40,7 @@ CREATE TABLE Vente(IdVente int NOT NULL CONSTRAINT KVente primary key,
                     Montante int NOT NULL CONSTRAINT MontanteTrueFalse CHECK(Montante in (0,1)),
                     OffreMultiple int NOT NULL CONSTRAINT OffreMultipleTrueFalse CHECK(OffreMultiple in (0,1)),
                     idProduit int NOT NULL,
+                    Quantite int NOT NULL CONSTRAINT QuantitePositive CHECK(Quantite >= 0),
                     CONSTRAINT FKIdProduit FOREIGN KEY(idProduit) REFERENCES Produit(idProduit),
                     IdSalle int NOT NULL,
                     CONSTRAINT FKIdSalle FOREIGN KEY(IdSalle) REFERENCES SalleDeVente(IdSalle),
@@ -77,7 +78,7 @@ CREATE TABLE Offre (
     CONSTRAINT F_IdVente_Offre FOREIGN KEY (IdVente) REFERENCES Vente(IdVente),
     CONSTRAINT F_Email_Offre FOREIGN KEY (Email) REFERENCES Utilisateur(Email),
     CONSTRAINT KFDateHeure FOREIGN KEY (DateHeure) REFERENCES DateHeureOffre(DateHeure),
-    CONSTRAINT chk_quantiteproduit CHECK (QuantiteProduit>=0)
+    CONSTRAINT chk_quantiteproduit CHECK (QuantiteProduit>0)
 );
 --
 --
