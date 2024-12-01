@@ -20,11 +20,13 @@ public class TestInterface {
             //Lancement d'une première connexion
             System.out.println("Connecting to the database...");
             Connection conn = DriverManager.getConnection(CONN_URL, USER, PASSWD);
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
             System.out.println("connected.");
 
             Interface inter = new Interface();
             inter.checkVentesDescendantes();
-            //inter.updateBD();
+            inter.updateBD();
             inter.header("VENTE AUX ENCHERES");
             System.out.println("Bienvenue à Baie-electronique, veuillez vous identifier : ");
             System.out.println("Adresse mail : ");
@@ -73,6 +75,7 @@ public class TestInterface {
                     break;
 
             }
+            conn.close();
             //préparation de la requête
             //PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Utilisateur WHERE NOMUSER = ?");
         } catch( SQLException e )

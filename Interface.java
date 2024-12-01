@@ -39,6 +39,7 @@ public class Interface {
         } else {
             compteurIdVente = 0; // Si la table est vide
         }
+        rs.close();
         this.compteurIdVente = compteurIdVente;
     }
 
@@ -91,10 +92,11 @@ public class Interface {
         PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM Propose WHERE NomCategorie = ?");
         statement.setString(1, categorie);
         ResultSet res = statement.executeQuery();
-
         if (res.next()) {
             return res.getInt(1) > 0; // Retourne true si des salles existent
         }
+        statement.close();
+        res.close();
         return false;
     }
 
@@ -103,17 +105,16 @@ public class Interface {
         // Obtenir le nouvel ID de salle en incrémentant le MAX(IdSalle)
         PreparedStatement maxIdSalle = conn.prepareStatement("SELECT COALESCE(MAX(IdSalle), 0) + 1 AS NewIdSalle FROM SalleDeVente");
         ResultSet rs = maxIdSalle.executeQuery();
-
         int newIdSalle = 1;
         if (rs.next()) {
             newIdSalle = rs.getInt("NewIdSalle");
         }
-
         // Insérer la nouvelle salle
         PreparedStatement statement = conn.prepareStatement("INSERT INTO SalleDeVente(IdSalle) VALUES (?)");
         statement.setInt(1, newIdSalle);
         statement.executeUpdate();
-
+        statement.close();
+        rs.close();
         return newIdSalle;
     }
 
@@ -134,6 +135,9 @@ public class Interface {
         statement.setString(1, categorie);
         statement.setInt(2, idNouvelleSalle);
         statement.executeUpdate();
+        checkStatement.close();
+        statement.close();
+        res.close();
     }
 
     ;
@@ -146,6 +150,8 @@ public class Interface {
             if (res.next()) {
                 return res.getInt(1);
             }
+            statementStock.close();
+            res.close();
         } catch (Exception e) {
             System.out.println("Produit introuvable !");
         }
@@ -205,12 +211,14 @@ public class Interface {
             statement1.setTimestamp(8, getDateActuelle());
             statement1.setInt(9, quantite);
             statement1.executeUpdate();
-
+            decrementationStock(idProduit, quantite, false);
+            statement1.close();
             int delai = 10;
             PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
             statement.setInt(1, idVente);
             statement.setInt(2, delai);
             statement.executeUpdate();
+            statement.close();
         }
         if (convenance.equals("NON")) {
             System.out.println("Désireriez-vous que cette vente soit révocable ou non ? Répondez par OUI ou NON.");
@@ -273,6 +281,7 @@ public class Interface {
             statement1.setTimestamp(8, getDateActuelle());
             statement1.setInt(9, quantite);
             statement1.executeUpdate();
+            statement1.close();
             if (limité.equals("OUI")) {
                 boolean success = false;
                 while (!success) {
@@ -285,6 +294,7 @@ public class Interface {
                         statement.setInt(1, idVente);
                         statement.setString(2, DateHeureFin);
                         statement.executeUpdate();
+                        statement.close();
                         success = true;
                     } catch (SQLException e) {
                         System.out.println("Vous n'avez pas respecté le format AAAA-MM-JJ HH:MI:SS !");
@@ -296,6 +306,7 @@ public class Interface {
                 statement.setInt(1, idVente);
                 statement.setInt(2, delai);
                 statement.executeUpdate();
+                statement.close();
             }
             decrementationStock(idProduit, quantite, false);
             System.out.println("Vente effectuée !");
@@ -347,10 +358,13 @@ public class Interface {
         PreparedStatement statementDerniereOffre = conn.prepareStatement("SELECT DateHeure FROM Offre WHERE IdVente = ? ");
         statementDerniereOffre.setInt(1, IdVente);
         ResultSet res3 = statementDerniereOffre.executeQuery();
+        Timestamp date = null;
         while (res3.next()) {
-            return res3.getTimestamp(1);
+            date = res3.getTimestamp(1);
         }
-        return null;
+        statementDerniereOffre.close();
+        res3.close();
+        return date;
     }
 
 
@@ -396,6 +410,8 @@ public class Interface {
 
             System.out.println("Salle n°" + curr_salle + " , Catégorie : " + curr_categorie);
         }
+        statement1.close();
+        res.close();
     }
 
 
@@ -442,7 +458,6 @@ public class Interface {
         PreparedStatement statement1 = conn.prepareStatement("SELECT v.IdVente,p.NomProduit, v.PrixDepart, vd.DateHeureFin FROM Vente v JOIN VenteDureeLimitee vd on v.idvente = vd.idvente JOIN Produit p ON p.idProduit = v.idProduit WHERE v.IdSalle = ?");
         statement1.setInt(1, IdSalle);
         ResultSet res = statement1.executeQuery();
-
         boolean flag = false;
 
         this.clearScreen();
@@ -472,6 +487,7 @@ public class Interface {
                 String dateFinSansMilli = formatter.format(dateFin);
                 System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix + " €. Date de fin de vente : " + dateFinSansMilli);
             }
+            statementOffreMax.close();
         }
 
         // À durée illimitée
@@ -505,9 +521,13 @@ public class Interface {
                 String dateFinSansMilli = formatter.format(dateFin);
                 System.out.println("Vente n°" + curr_vente + " , Produit : " + curr_nom + " , Prix : " + prix + " €. Date de fin de vente : " + dateFinSansMilli);
             }
+            statementOffreMax.close();
+            res3.close();
         }
-
-
+        statement1.close();
+        statement2.close();
+        res.close();
+        res2.close();
         return flag;
     }
 
@@ -558,9 +578,9 @@ public class Interface {
             String curr_categorie = res.getString(1);
 
             System.out.println("Catégorie : " + curr_categorie);
-
-
         }
+        statement1.close();
+        res.close();
     }
 
     public void affichageProduits(String cat) throws SQLException {
@@ -582,7 +602,8 @@ public class Interface {
 
             System.out.println("Produit : " + curr_produit + " , Stock : " + curr_stock + ", IdProduit : " + curr_id_produit);
         }
-
+        statement1.close();
+        res.close();
     }
 
 
@@ -646,6 +667,8 @@ public class Interface {
         while (res.next()) {
             int montante = res.getInt(1);
             if (montante == 0) {
+                statementPrix.close();
+                res.close();
                 return false;
             }
             return true;
@@ -660,9 +683,10 @@ public class Interface {
         while (res.next()) {
             int multiple = res.getInt(1);
             if (multiple == 0) {
-                return false;
+                statementPrix.close();
+                res.close();
+                return true;
             }
-            return true;
         }
         return false;
     }
@@ -672,6 +696,8 @@ public class Interface {
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
         if (res.next() && res.getInt(1) >= 0) {
+            statementPrix.close();
+            res.close();
             return true;
         }
         return false;
@@ -698,7 +724,8 @@ public class Interface {
             if (resProduit.next()) {
                 produit = resProduit.getString(1);
             }
-
+            statementProduit.close();
+            resProduit.close();
             System.out.println("Bienvenue dans l'enchère du produit correspondant : " + produit);
             String montante;
 
@@ -742,8 +769,8 @@ public class Interface {
                         }
                     }
                 } else {
-                    PreparedStatement statementPrix = conn.prepareStatement("SELECT STOCK FROM Produit WHERE NOMPRODUIT = ?");
-                    statementPrix.setString(1, produit);
+                    PreparedStatement statementPrix = conn.prepareStatement("SELECT QUANTITE FROM VENTE WHERE IDVENTE = ?");
+                    statementPrix.setInt(1, idVente);
                     ResultSet res = statementPrix.executeQuery();
                     while (res.next()) {
                         // cas où il y a déjà des offres
@@ -755,8 +782,8 @@ public class Interface {
                             if (offreMax == 0) {
                                 offreMax = resOffreMax.getFloat(1);
                             }
-                            int stock = res.getInt(1);
-                            System.out.println("Il y a " + stock + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
+                            int quantite = res.getInt(1);
+                            System.out.println("Il y a " + quantite + " " + produit + ", le prix de la dernière enchère est de : " + offreMax + " euros");
                             // Vérification suivant si l'offre est montante ou pas
                             System.out.println("Quelle est votre offre (en euros) ? ");
                             Scanner scanOffre = new Scanner(System.in);
@@ -771,14 +798,14 @@ public class Interface {
                             // Vérification qu'il y a assez de produits en stock
                             System.out.println("Combien voulez-vous en acheter ? ");
                             Scanner scanQuantite = new Scanner(System.in);
-                            int quantite = scanQuantite.nextInt();
-                            while (quantite > stock) {
+                            int nouvelleQuantite = scanQuantite.nextInt();
+                            while (nouvelleQuantite > quantite) {
                                 System.out.println("Il n'y a pas assez de produits en stock");
                                 System.out.println("Combien voulez-vous en acheter ? ");
                                 scanQuantite = new Scanner(System.in);
-                                quantite = scanQuantite.nextInt();
+                                nouvelleQuantite = scanQuantite.nextInt();
                             }
-                            ajouteOffre(idVente, mail, offre, quantite);
+                            ajouteOffre(idVente, mail, offre, nouvelleQuantite);
                             System.out.println("Enchère effectuée");
                         }
                     }
@@ -806,7 +833,10 @@ public class Interface {
         statementPrix.setString(1, produit);
         ResultSet res = statementPrix.executeQuery();
         while (res.next()) {
-            return res.getString(1);
+            String email = res.getString(1);
+            statementPrix.close();
+            res.close();
+            return email;
         }
         return "";
     }
@@ -824,7 +854,10 @@ public class Interface {
         statementPrix.setString(1, produit);
         ResultSet res = statementPrix.executeQuery();
         while (res.next()) {
-            return res.getInt(1);
+            int idProduit = res.getInt(1);
+            statementPrix.close();
+            res.close();
+            return idProduit;
         }
         return -1;
     }
@@ -835,7 +868,10 @@ public class Interface {
         statementPrix.setString(1, produit);
         ResultSet res = statementPrix.executeQuery();
         while (res.next()) {
-            return res.getInt(1);
+            int idProduit = res.getInt(1);
+            statementPrix.close();
+            res.close();
+            return idProduit;
         }
         return -1;
     }
@@ -851,8 +887,10 @@ public class Interface {
         statementPrix.setFloat(3, PrixAchat);
         statementPrix.setInt(4, quantite);
         statementPrix.setTimestamp(5, dateActuelle);
-
         statementPrix.executeUpdate();
+
+        statementDateHeureOffre.close();
+        statementPrix.close();
     }
 
     public void suppressionProduit(int idProduit) throws SQLException {
@@ -867,6 +905,9 @@ public class Interface {
         PreparedStatement statementProduit = conn.prepareStatement("DELETE FROM Produit WHERE idProduit = ?");
         statementProduit.setString(1, Integer.toString(idProduit));
         statementProduit.executeQuery();
+
+        statementOffre.close();
+        statementProduit.close();
     }
 
 
@@ -884,6 +925,9 @@ public class Interface {
         PreparedStatement statementVente = conn.prepareStatement("DELETE FROM Vente WHERE idVente = ?");
         statementVente.setInt(1, idVente);
         statementVente.executeUpdate();
+
+        statementVentelim.close();
+        statementVente.close();
     }
 
     /*
@@ -892,6 +936,7 @@ public class Interface {
         PreparedStatement statementOffre = conn.prepareStatement("DELETE FROM Offre WHERE IdVente = ?");
         statementOffre.setInt(1, idVente);
         statementOffre.executeUpdate();
+        statementOffre.close();
     }
 
     public void suppressionAllOffresProduit(int idProduit) throws SQLException {
@@ -902,21 +947,7 @@ public class Interface {
             int idp = res.getInt(1);
             suppressionAllOffres(idp);
         }
-    }
-
-    /*
-     * Methode pour supprimer une offre spécifique, a partir du nom du produit et du mail de la personne
-     * ayant fait l'enchere */
-    public void suppressionOffre(String nomProduit, String mail) throws SQLException {
-        PreparedStatement statementProduit = conn.prepareStatement("SELECT v.idVente FROM Vente v, Produit p WHERE p.idProduit = v.idProduit and p.NomProduit = ?");
-        statementProduit.setString(1, nomProduit);
-        ResultSet res = statementProduit.executeQuery();
-        while (res.next()) {
-            PreparedStatement statementOffre = conn.prepareStatement("DELETE FROM Offre WHERE idVente = ? and Email = ?");
-            statementOffre.setInt(1, res.getInt(1));
-            statementOffre.setString(2, mail);
-            statementOffre.executeUpdate();
-        }
+        statementOffre.close();
     }
 
     /*On va l'appeler quand qqn met en vente un produit */
@@ -955,8 +986,11 @@ public class Interface {
                 statementAlter.setInt(1, stockRestant - quantiteProduit);
                 statementAlter.setInt(2, idProduit);
                 statementAlter.executeUpdate();
+                statementAlter.close();
             }
         }
+        statementStock.close();
+        res.close();
     }
 
     /*Méthode qui va être appelée lorsqu'un utilisateur fait une offre sur une vente descendante*/
@@ -975,8 +1009,11 @@ public class Interface {
                 statementAlter.setInt(1, quantite - quantiteProduit);
                 statementAlter.setInt(2, idVente);
                 statementAlter.executeUpdate();
+                statementAlter.close();
             }
         }
+        statementStock.close();
+        res.close();
     }
 
 
@@ -1001,20 +1038,25 @@ public class Interface {
                     statementAlter.setTimestamp(2, getDateActuelle());
                     statementAlter.setInt(3, idVente);
                     statementAlter.executeUpdate();
+                    statementAlter.close();
                 }
             }
         }
+        statementVentesDescendantes.close();
+        res.close();
     }
 
     public int resteVente(int idVente) throws SQLException {
-        PreparedStatement statementReste = conn.prepareStatement("SELECT Vente.Stock COALESCE(MAX(Offre.PRIXACHAT),0) FROM Vente JOIN Offre ON Offre.IdVente=Vente.IdVente WHERE idVente = ?");
+        PreparedStatement statementReste = conn.prepareStatement("SELECT Vente.Quantite, COALESCE(MAX(Offre.PRIXACHAT),0), Produit.Stock FROM Vente JOIN Offre ON Offre.IdVente=Vente.IdVente JOIN Produit ON Produit.idProduit=Vente.idProduit WHERE Vente.idVente = ? GROUP BY Produit.Stock, Vente.Quantite");
         statementReste.setInt(1, idVente);
         ResultSet res = statementReste.executeQuery();
         try {
             while (res.next()) {
-                int stock = res.getInt(1);
+                int stock = res.getInt(3);
                 int maxPrixAchat = res.getInt(2);
                 if (maxPrixAchat == 0) {
+                    statementReste.close();
+                    res.close();
                     return stock;
                 } else {
                     PreparedStatement statementQuantite = conn.prepareStatement("SELECT QuantiteProduit FROM Offre WHERE PrixAchat = ?");
@@ -1022,7 +1064,7 @@ public class Interface {
                     ResultSet res2 = statementQuantite.executeQuery();
                     if (res2.next()) {
                         int quantite = res2.getInt(1);
-                        return stock - quantite;
+                        return stock + quantite;
                     }
                 }
             }
@@ -1081,7 +1123,7 @@ public class Interface {
                                 creeProp.setInt(1, resProd.getInt(1));
                                 creeProp.setString(2, resProd.getString(2));
                                 creeProp.setFloat(3, resProd.getFloat(3));
-                                creeProp.setInt(4, nouvelleQuantite);
+                                creeProp.setInt(4,nouvelleQuantite);
                                 creeProp.setString(5, resProd.getString(5));
                                 creeProp.setString(6, resProd.getString(6));
                                 creeProp.executeUpdate();
@@ -1174,7 +1216,7 @@ public class Interface {
                                             creeProp.setInt(1, resProdRevoc.getInt(1));
                                             creeProp.setString(2, resProdRevoc.getString(2));
                                             creeProp.setFloat(3, resProdRevoc.getFloat(3));
-                                            creeProp.setInt(4, resProdRevoc.getInt(4) + quantite);
+                                            creeProp.setInt(4,quantite);
                                             creeProp.setString(5, resProdRevoc.getString(5));
                                             creeProp.setString(6, resProdRevoc.getString(6));
                                             creeProp.executeUpdate();
@@ -1283,6 +1325,13 @@ public class Interface {
                                                 creeProp.setString(5, resProdRevoc.getString(5));
                                                 creeProp.setString(6, resProdRevoc.getString(6));
                                                 creeProp.executeUpdate();
+                                                creeProp.close();
+                                                resProdRevoc.close();
+                                                selectValeursProduitRevoc.close();
+                                                statementRevocable.close();
+                                                statementOffreMax.close();
+                                                statementQtProduit.close();
+                                                statementSupprVenteLimRevoc.close();
                                             }
                                         } else {
                                             // Si le vendeur ne va pas gagner d'argent, on annule son offre
@@ -1300,8 +1349,6 @@ public class Interface {
                                             if (resProdRevoc2.next()) {
                                                 quantite = resProdRevoc2.getInt(1);
                                             }
-
-                                            int nouvelleQuantiteRevoc = resteVente(idVente);
                                             // On doit d'abord DROP les offres, puis les ventes (Limitée ou non) puis les ventes puis les produits
                                             // On supprime les offres.
                                             suppressionAllOffres(idVente);
@@ -1323,10 +1370,16 @@ public class Interface {
                                                 creeProp.setInt(1, resProdRevoc.getInt(1));
                                                 creeProp.setString(2, resProdRevoc.getString(2));
                                                 creeProp.setFloat(3, resProdRevoc.getFloat(3));
-                                                creeProp.setInt(4, resProdRevoc.getInt(4) + quantite);
+                                                creeProp.setInt(4, quantite);
                                                 creeProp.setString(5, resProdRevoc.getString(5));
                                                 creeProp.setString(6, resProdRevoc.getString(6));
                                                 creeProp.executeUpdate();
+                                                selectQuantite.close();
+                                                selectPrixRevient.close();
+                                                selectValeursProduitRevoc.close();
+                                                creeProp.close();
+                                                resProdRevoc.close();
+                                                resProdRevoc2.close();
                                             }
                                         }
                                     }
@@ -1337,6 +1390,8 @@ public class Interface {
                 }
             }
             System.out.println("Base de données mise à jour");
+
         }
+        res.close();
     }
 }
