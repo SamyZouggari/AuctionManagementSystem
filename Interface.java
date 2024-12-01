@@ -1227,6 +1227,9 @@ public class Interface {
                                             creeProp.executeUpdate();
                                         }
                                     } else {
+                                        PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
+                                        selectQuantite.setInt(1, idVente);
+                                        ResultSet resProdRevoc2 = selectQuantite.executeQuery();
                                         // Si le vendeur ne va pas gagner d'argent, on annule son offre
                                         // On commence par supprimer les offres associées à la vente.
                                         suppressionAllOffres(idVente);
@@ -1235,9 +1238,6 @@ public class Interface {
                                         // On doit maintenant gérer le produit
                                         // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
                                         // on va d'abord recup toutes les values du produit
-                                        PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
-                                        selectQuantite.setInt(1, idVente);
-                                        ResultSet resProdRevoc2 = selectQuantite.executeQuery();
                                         int quantite = 0;
                                         if (resProdRevoc2.next()) {
                                             quantite = resProdRevoc2.getInt(1);
@@ -1386,6 +1386,9 @@ public class Interface {
                                                 statementSupprVenteLimRevoc.close();
                                             }
                                         } else {
+                                            PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
+                                            selectQuantite.setInt(1, idVente);
+                                            ResultSet resProdRevoc2 = selectQuantite.executeQuery();
                                             // Si le vendeur ne va pas gagner d'argent, on annule son offre
                                             // On commence par supprimer les offres associées à la vente.
                                             suppressionAllOffres(idVente);
@@ -1394,9 +1397,6 @@ public class Interface {
                                             // On doit maintenant gérer le produit
                                             // la seule solution au'on voit c'est de supprimer le produit et de le re-créer
                                             // on va d'abord recup toutes les values du produit
-                                            PreparedStatement selectQuantite = conn.prepareStatement("SELECT Quantite FROM Vente WHERE idVente = ?");
-                                            selectQuantite.setInt(1, idVente);
-                                            ResultSet resProdRevoc2 = selectQuantite.executeQuery();
                                             int quantite = 0;
                                             if (resProdRevoc2.next()) {
                                                 quantite = resProdRevoc2.getInt(1);
