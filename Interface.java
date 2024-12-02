@@ -219,6 +219,7 @@ public class Interface {
             statement.setInt(2, delai);
             statement.executeUpdate();
             statement.close();
+            conn.commit();
         }
         if (convenance.equals("NON")) {
             System.out.println("Désireriez-vous que cette vente soit révocable ou non ? Répondez par OUI ou NON.");
@@ -309,6 +310,7 @@ public class Interface {
                 statement.close();
             }
             decrementationStock(idProduit, quantite, false);
+            conn.commit();
             System.out.println("Vente effectuée !");
         }
 
@@ -444,7 +446,9 @@ public class Interface {
             String curr_nom = res.getString(2);
             Timestamp dateFin = res.getTimestamp(4);
 
-            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
+            //PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE IdVente = (select idProduit from Vente where idVente = ?) ");
+            PreparedStatement statementOffreMax = conn.prepareStatement("SELECT MAX(PrixAchat) FROM Offre WHERE Offre.IdVente = ?");
+
 
             statementOffreMax.setInt(1, curr_vente);
 
@@ -486,7 +490,7 @@ public class Interface {
                     DateHeureDerniereOffre = getDateActuelle();
                 }
                 Timestamp dateFin = ajouteDelai(DateHeureDerniereOffre, delai);
-                float prix = res2.getFloat(1);
+                float prix = res3.getFloat(1);
                 if (prix == 0.0) {
                     prix = res2.getFloat(3);
                 }
