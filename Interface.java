@@ -314,33 +314,6 @@ public class Interface {
 
     }
 
-//    public Produit CreerProduit() throws SQLException {
-//        //renvoie l'id du produit créé
-//        int idProduit = getCompteurIdProduit();
-//        incrCompteurIdProduit();
-//        System.out.println("De quelle catégorie sont le/les produit(s) que vous aimereriez vendre ?");
-//        Scanner scan = new Scanner(System.in);
-//        String categorie = scan.next();
-//        System.out.println("Quelle est le nom du produit que vous aimeriez vendre ?");
-//        String nom_produit = scan.next();
-//        System.out.println("Quelle quantité de ce produit aimeriez vous vendre ? ");
-//        int quantite = scan.nextInt();
-//        System.out.println("Quelle est le prix de revient de ce produit pour vous ? ");
-//        Float prixDeRevient = scan.nextFloat();
-//        //String produit = "(" + "'"+ Integer.toString(idProduit) + "' , '" + nom_produit+ "', '" + Float.toString(prixDeRevient)+ "', '"+ Integer.toString(quantite) + "', '" +categorie+ "', '"+ this.currMail +"'" +")";
-//        //System.out.println(produit);
-//        PreparedStatement statement = conn.prepareStatement("INSERT INTO Produit (idProduit, NomProduit, PrixDeRevient, Stock, NomCategorie, Email) VALUES (?,?,?,?,?,?)");
-//        statement.setInt(1, idProduit);
-//        statement.setString(2, nom_produit);
-//        statement.setFloat(3, prixDeRevient);
-//        statement.setInt(4, quantite);
-//        statement.setString(5, categorie);
-//        statement.setString(6, this.currMail);
-//        statement.executeUpdate();
-//        statement.close();
-//        return new Produit(categorie, idProduit, prixDeRevient, quantite);
-//    }
-
     public Connection connexion() throws SQLException {
 
         //Enregistrement du pilote spécifique à oracle fourni par oracle.jdbc
@@ -624,29 +597,12 @@ public class Interface {
     }
 
 
-    public boolean verifieProduit(String mail) throws SQLException {
-
-        
-
-
-        /* System.out.println("Quel produit voulez-vous acheter ?");
-        PreparedStatement statement = conn.prepareStatement("SELECT COUNT(*) FROM Produit WHERE NOMPRODUIT = ?");
-        Scanner scannerProduit = new Scanner(System.in);
-        String produit = scannerProduit.next();
-        statement.setString(1, produit);
-        ResultSet res = statement.executeQuery();
-        if (res.next() && res.getInt(1) > 0) {
-            System.out.println("Ce produit est disponible");
-            enchere(produit, mail);
-            return true;
-        } else {
-            return false;
-        } */
-
-        return true;
-    }
 
     public boolean IsRevocable(int IdVente) throws SQLException {
+
+        //Renvoie true si la vente est révocable
+
+
         PreparedStatement statementPrix = conn.prepareStatement("SELECT REVOCABLE FROM VENTE WHERE IDVENTE = ?");
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
@@ -661,6 +617,9 @@ public class Interface {
     }
 
     public boolean IsMontante(int IdVente) throws SQLException {
+
+        //Renvoie true si la vente est montante
+
         PreparedStatement statementPrix = conn.prepareStatement("SELECT MONTANTE FROM VENTE WHERE IDVENTE = ?");
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
@@ -677,6 +636,9 @@ public class Interface {
     }
 
     public boolean IsOffreMultiple(int IdVente) throws SQLException {
+
+        //renvoie true si chaque utilisateur peut faire plusieurs offres sur la vente
+
         PreparedStatement statementPrix = conn.prepareStatement("SELECT OFFREMULTIPLE FROM VENTE WHERE IDVENTE = ?");
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
@@ -692,6 +654,9 @@ public class Interface {
     }
 
     public boolean IsDureeLimitee(int IdVente) throws SQLException {
+
+        //renvoie true si la vente est à durée limitée
+
         PreparedStatement statementPrix = conn.prepareStatement("SELECT IDVENTE FROM VENTEDUREELIMITEE WHERE IDVENTE = ?");
         statementPrix.setInt(1, IdVente);
         ResultSet res = statementPrix.executeQuery();
