@@ -780,6 +780,7 @@ public class Interface {
                         }
                         ajouteOffre(idVente, mail, offre, nouvelleQuantite);
                         conn.commit();
+                        decrementationQuantite(idVente, nouvelleQuantite);
                         System.out.println("Enchère effectuée");
                     }
                 }
@@ -887,22 +888,35 @@ public class Interface {
 
     public void suppressionVente(int idVente) throws SQLException {
         boolean lim = IsDureeLimitee(idVente);
-        PreparedStatement statementVentelim;
-        if (lim) {
-            statementVentelim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
-        } else {
-            statementVentelim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+        PreparedStatement statementVentelim = null;
+        PreparedStatement statementVente = null;
+        try {
+            if (lim) {
+                statementVentelim = conn.prepareStatement("DELETE FROM VenteDureeLimitee WHERE idVente = ?");
+            } else {
+                statementVentelim = conn.prepareStatement("DELETE FROM VenteDureeIllimitee WHERE idVente = ?");
+            }
+            statementVentelim.setInt(1, idVente);
+            statementVentelim.executeUpdate();
+            statementVente = conn.prepareStatement("DELETE FROM Vente WHERE idVente = ?");
+            statementVente.setInt(1, idVente);
+            statementVente.executeUpdate();
+            conn.commit();
+        } catch (SQLException e) {
+            if (conn != null) {
+                conn.rollback();
+            }
+            throw e; // Relancer l'exception pour la gestion en amont
+        } finally {
+            if (statementVentelim != null) {
+                statementVentelim.close();
+            }
+            if (statementVente != null) {
+                statementVente.close();
+            }
         }
-        statementVentelim.setInt(1, idVente);
-        statementVentelim.executeUpdate();
-
-        PreparedStatement statementVente = conn.prepareStatement("DELETE FROM Vente WHERE idVente = ?");
-        statementVente.setInt(1, idVente);
-        statementVente.executeUpdate();
-
-        statementVentelim.close();
-        statementVente.close();
     }
+
 
     /*
      * Methode pour supprimer toutes les offres qui ont ete effectuees sur un produit à partir de l'id de la vente */
@@ -976,6 +990,7 @@ public class Interface {
             int quantite = res.getInt(1);
             // S'il n'y a plus de produit dans la vente, on supprime la vente
             if (quantite - quantiteProduit == 0) {
+                suppressionAllOffres(idVente);
                 suppressionVente(idVente);
             } else {
                 // S'il reste encore du stock à la fin de l'achat, on décrémente simplement le stock
@@ -1423,4 +1438,68 @@ public class Interface {
         conn.commit();
         res.close();
         }
+
+    public boolean mailExistant(String mail) throws SQLException {
+        PreparedStatement requestUser = conn.prepareStatement("SELECT EMAIL FROM  UTILISATEUR WHERE EMAIL = ?");
+        requestUser.setString(1, mail);
+        setEmail(mail);
+        conn.commit();
+        ResultSet rs = requestUser.executeQuery();
+        if (rs.next() && rs.getString(1).equals(mail)) {
+            return true;
+        }
+        return false;
     }
+
+    public String getPrenom(String mail) throws SQLException {
+        try {
+            PreparedStatement requestUser = conn.prepareStatement("SELECT EMAIL,PRENOMUSER FROM  UTILISATEUR WHERE EMAIL = ?");
+            requestUser.setString(1, mail);
+            setEmail(mail);
+            conn.commit();
+            ResultSet rs = requestUser.executeQuery();
+            if (rs.next() && rs.getString(1).equals(mail)) {
+                return rs.getString(2);
+            }
+        }
+        catch (Exception e) {
+            return "ERREUR";
+        }
+        return "erreur lors de l'identification";
+    }
+
+    public String identification() throws SQLException {
+        header("VENTE AUX ENCHERES");
+        System.out.println("Bienvenue à Baie-electronique, veuillez vous identifier : ");
+        System.out.println("Adresse mail : ");
+        Scanner scannerMail = new Scanner(System.in);
+        String mail = scannerMail.nextLine();
+        if (mailExistant(mail)) {
+            String prenom = getPrenom(mail);
+            System.out.println("Vous êtes connecté " + prenom + " !");
+        } else {
+            System.out.println("Vous n'êtes pas enregistré, veuillez vous inscrire pour continuer");
+            System.out.println("Nom de famille : ");
+            Scanner scannerNom = new Scanner(System.in);
+            String nom = scannerNom.nextLine();
+
+            System.out.println("Prenom : ");
+            Scanner scannerPrenom = new Scanner(System.in);
+            String prenom = scannerPrenom.nextLine();
+
+            System.out.println("Adresse postale : ");
+            Scanner scannerAdresse = new Scanner(System.in);
+            String adresse = scannerAdresse.nextLine();
+            PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO UTILISATEUR VALUES(?,?,?,?)");
+            statementPrix.setString(1, mail);
+            statementPrix.setString(2, nom);
+            statementPrix.setString(3, prenom);
+            statementPrix.setString(4, adresse);
+            statementPrix.executeUpdate();
+            System.out.println("Vous avez bien été enregistré " + prenom);
+            System.out.println("----------------------------------------------");
+            conn.commit();
+        }
+        return mail;
+    }
+}

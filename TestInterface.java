@@ -27,41 +27,7 @@ public class TestInterface {
             Interface inter = new Interface();
             inter.checkVentesDescendantes();
             inter.updateBD();
-            inter.header("VENTE AUX ENCHERES");
-            System.out.println("Bienvenue à Baie-electronique, veuillez vous identifier : ");
-            System.out.println("Adresse mail : ");
-            Scanner scannerMail = new Scanner(System.in);
-            String mail = scannerMail.nextLine();
-
-            System.out.println("Nom de famille : ");
-            Scanner scannerNom = new Scanner(System.in);
-            String nom = scannerNom.nextLine();
-
-            System.out.println("Prenom : ");
-            Scanner scannerPrenom = new Scanner(System.in);
-            String prenom = scannerPrenom.nextLine();
-
-            System.out.println("Adresse postale : ");
-            Scanner scannerAdresse = new Scanner(System.in);
-            String adresse = scannerAdresse.nextLine();
-
-            PreparedStatement requestUser = conn.prepareStatement("SELECT EMAIL FROM  UTILISATEUR WHERE EMAIL = ?");
-            requestUser.setString(1, mail);
-            inter.setEmail(mail);
-            conn.commit();
-            ResultSet rs = requestUser.executeQuery();
-            if (rs.next() && rs.getString(1).equals(mail)) {
-                System.out.println("Vous êtes connecté " + prenom);
-            } else {
-                PreparedStatement statementPrix = conn.prepareStatement("INSERT INTO UTILISATEUR VALUES(?,?,?,?)");
-                statementPrix.setString(1, mail);
-                statementPrix.setString(2, nom);
-                statementPrix.setString(3, prenom);
-                statementPrix.setString(4, adresse);
-                statementPrix.executeUpdate();
-                System.out.println("Vous avez bien été enregistré " + prenom);
-                System.out.println("----------------------------------------------");
-            }
+            String mail = inter.identification();
             System.out.println("Appuyer sur les touches suivantes");
             System.out.println("0 = Achat d'un produit");
             System.out.println("1 = Vente d'un produit");
