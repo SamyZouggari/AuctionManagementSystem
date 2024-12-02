@@ -213,7 +213,7 @@ public class Interface {
             statement1.executeUpdate();
             decrementationStock(idProduit, quantite, false);
             statement1.close();
-            int delai = 3;
+            int delai = 10;
             PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
             statement.setInt(1, idVente);
             statement.setInt(2, delai);
@@ -302,7 +302,7 @@ public class Interface {
                     }
                 }
             } else if (limité.equals("NON")) {
-                int delai = 3;
+                int delai = 10;
                 PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
                 statement.setInt(1, idVente);
                 statement.setInt(2, delai);
@@ -737,6 +737,7 @@ public class Interface {
                             quantiteOffre = scanQuantite.nextInt();
                         }
                         decrementationQuantite(idVente, quantiteOffre);
+                        conn.commit();
                         System.out.println("Vous avez acheté " + quantiteOffre + " " + produit + " !");
                     }
                 }
@@ -778,6 +779,7 @@ public class Interface {
                             nouvelleQuantite = scanQuantite.nextInt();
                         }
                         ajouteOffre(idVente, mail, offre, nouvelleQuantite);
+                        conn.commit();
                         System.out.println("Enchère effectuée");
                     }
                 }
