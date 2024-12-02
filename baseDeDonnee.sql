@@ -23,7 +23,7 @@ CREATE TABLE Utilisateur(Email varchar(100) NOT NULL CONSTRAINT Kutilisateur pri
 CREATE TABLE Produit(idProduit int NOT NULL CONSTRAINT Kproduit primary key,
                 NomProduit varchar(100) NOT NULL,
                 PrixDeRevient float NOT NULL CONSTRAINT PrixDeRevientPositif CHECK(PrixDeRevient>0),
-                Stock int NOT NULL CONSTRAINT StockPositif CHECK(Stock >0),
+                Stock int NOT NULL CONSTRAINT StockPositif CHECK(Stock >=0),
                 NomCategorie varchar(100) NOT NULL,
                 Email varchar(100) NOT NULL,
                 CONSTRAINT KFNomCategorieProduit FOREIGN KEY(NomCategorie) REFERENCES CategorieProduit(NomCategorie),
@@ -80,35 +80,3 @@ CREATE TABLE Offre (
     CONSTRAINT KFDateHeure FOREIGN KEY (DateHeure) REFERENCES DateHeureOffre(DateHeure),
     CONSTRAINT chk_quantiteproduit CHECK (QuantiteProduit>0)
 );
---
---
--- SELECT * FROM CategorieProduit;
---
--- -- Sélectionner toutes les colonnes de la table Utilisateur
--- SELECT * FROM Utilisateur;
---
--- -- Sélectionner toutes les colonnes de la table CaracteristiqueProduit
--- SELECT * FROM CaracteristiqueProduit;
---
--- -- Sélectionner toutes les colonnes de la table Produit
--- SELECT * FROM Produit;
---
--- -- Sélectionner toutes les colonnes de la table SalleDeVente
--- SELECT * FROM SalleDeVente;
---
--- -- Sélectionner toutes les colonnes de la table Vente
--- SELECT * FROM Vente;
---
--- -- Sélectionner toutes les colonnes de la table VenteDureeLimitee
--- SELECT * FROM VenteDureeLimitee;
---
--- -- Sélectionner toutes les colonnes de la table VenteDureeIllimitee
--- SELECT * FROM VenteDureeIllimitee;
---
--- -- Sélectionner toutes les colonnes de la table Propose
--- SELECT * FROM Propose;
---
--- SELECT * FROM DateOffre;
---
--- -- Sélectionner toutes les colonnes de la table Offre
--- SELECT * FROM Offre;

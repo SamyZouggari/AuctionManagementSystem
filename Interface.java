@@ -1,18 +1,10 @@
 import java.sql.*;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.*;
 
-import objets.*;
 import oracle.jdbc.driver.OracleDriver;
 
-import javax.print.DocFlavor;
-
-import static java.lang.Float.parseFloat;
-import static java.lang.Integer.parseInt;
-
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 
