@@ -520,6 +520,7 @@ public class Interface {
             int idVente = scannerNum.nextInt();
 
             enchere(idVente, mail);
+            conn.commit();
         } else {
             System.out.println("\n\nIl n'y a aucune vente en cours dans cette salle. \nTapez 0 pour revenir au choix précédent");
 
@@ -528,6 +529,7 @@ public class Interface {
 
             if (menu == 0) {
                 process_acheteur(mail);
+                conn.commit();
             }
         }
     }
@@ -1081,7 +1083,7 @@ public class Interface {
             ResultSet res1 = produitAcheter.executeQuery();
             while (res1.next()) {
                 String nomProduit = res1.getString(1);
-                System.out.println(email + "a gagne l'enchere sur le produit " + nomProduit);
+                System.out.println(email + "a gagne l'enchere sur le produit " + nomProduit + " ");
             }
         }
     }
@@ -1093,6 +1095,7 @@ public class Interface {
      * au prix de revient, la vente et l'offre sont supprimées, mais pas le produit, on le sort simplement
      * de la salle de vente */
     public void updateBD() throws SQLException {
+        conn.setAutoCommit(false);
         Timestamp actualDate = getDateActuelle();
         Statement checkOffres = conn.createStatement();
         // On commence par gérer le cas des ventes à durée limitée
@@ -1410,6 +1413,7 @@ public class Interface {
                 }
             }
             System.out.println("Base de données mise à jour");
+        conn.commit();
         res.close();
         }
     }

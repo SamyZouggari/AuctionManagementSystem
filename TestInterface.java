@@ -21,7 +21,7 @@ public class TestInterface {
             System.out.println("Connecting to the database...");
             Connection conn = DriverManager.getConnection(CONN_URL, USER, PASSWD);
             conn.setAutoCommit(false);
-            conn.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             System.out.println("connected.");
 
             Interface inter = new Interface();
@@ -48,6 +48,7 @@ public class TestInterface {
             PreparedStatement requestUser = conn.prepareStatement("SELECT EMAIL FROM  UTILISATEUR WHERE EMAIL = ?");
             requestUser.setString(1, mail);
             inter.setEmail(mail);
+            conn.commit();
             ResultSet rs = requestUser.executeQuery();
             if (rs.next() && rs.getString(1).equals(mail)) {
                 System.out.println("Vous êtes connecté " + prenom);
