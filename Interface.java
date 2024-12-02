@@ -213,7 +213,7 @@ public class Interface {
             statement1.executeUpdate();
             decrementationStock(idProduit, quantite, false);
             statement1.close();
-            int delai = 10;
+            int delai = 3;
             PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
             statement.setInt(1, idVente);
             statement.setInt(2, delai);
@@ -302,7 +302,7 @@ public class Interface {
                     }
                 }
             } else if (limité.equals("NON")) {
-                int delai = 10;
+                int delai = 3;
                 PreparedStatement statement = conn.prepareStatement("INSERT INTO VenteDureeIllimitee (IdVente, Delai) VALUES (?,?)");
                 statement.setInt(1, idVente);
                 statement.setInt(2, delai);
