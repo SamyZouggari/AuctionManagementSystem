@@ -10,7 +10,7 @@ public class TestInterface {
     private static final String USER = "zouggars";
     private static final String PASSWD = "zouggars";
 
-
+    //On a utilisé comme base de données celle de Samy, où l'on a éxécuté nos codes SQL pour la ccréer et la remplir
 
     public static void main(String[] args) throws ClassNotFoundException {
         try {
@@ -77,8 +77,6 @@ public class TestInterface {
             }
             conn.commit();
             conn.close();
-            //préparation de la requête
-            //PreparedStatement statement = conn.prepareStatement(" SELECT * FROM Utilisateur WHERE NOMUSER = ?");
         } catch( SQLException e )
     {
         e.printStackTrace();
