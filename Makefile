@@ -4,9 +4,9 @@ CLASS_FILES = Interface.class TestInterface.class
 JAVAC = javac
 JAVA = java
 SQLPLUS = sqlplus
-DB_USER = zouggars
-DB_PASS = zouggars
-DB_CONN = oracle1.ensimag.fr:1521:oracle1
+DB_USER =
+DB_PASS = 
+DB_CONN = 
 MAIN_CLASS = TestInterface
 
 # Targets
@@ -24,7 +24,7 @@ db-init:
 
 db-fill:
 	@echo "Populating database with initial data..."
-	$(SQLPLUS) $(DB_USER)/$(DB_PASS)@$(DB_CONN) @RemplissageBDD.sql
+	$(SQLPLUS)g $(DB_USER)/$(DB_PASS)@$(DB_CONN) @RemplissageBDD.sql
 
 clean:
 	@echo "Cleaning up compiled files..."
