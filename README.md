@@ -1,7 +1,7 @@
 # 🛒 Auction Management System
 
 Welcome to our **Auction Management System**, a Java-based application integrated with Oracle SQL. This project allows users to buy and sell products via an auction platform with dynamic features like bidding, stock management, and user authentication.
-We were 5 on the project and we did it in one week. I contributed in creating from a description of ther problem, then creating it in sql. I also created the interface (TestInterface.java) and coded the auction system with JDBC.
+We were 5 on the project and we did it in one week. I contributed in creating manually the database from a description, then creating it in sql. I also created the interface (TestInterface.java) and coded the auction system (buyer part) with JDBC.
 ---
 
 ## 🚀 Key Features
@@ -62,7 +62,7 @@ Welcome to the Auction Management System, a Java-based project integrated with O
     RemplissageBDD.sql: SQL script to populate the database with sample data.
 
 ## 📝 How to Run
-First, in the Makefile you have to change the name of the server on DB_CONN, the login into your database by changing DB_USER and DB_PASS. 
+First, in the Makefile you have to set the name of the server on DB_CONN, the login into your database by changing DB_USER and DB_PASS. 
 
 ### Prerequisites
 - Oracle SQL Database instance
