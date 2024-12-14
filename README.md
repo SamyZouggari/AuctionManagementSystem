@@ -62,6 +62,7 @@ Welcome to the Auction Management System, a Java-based project integrated with O
     RemplissageBDD.sql: SQL script to populate the database with sample data.
 
 ## 📝 How to Run
+First, in the Makefile you have to change the name of the server on DB_CONN, the login into your database by changing DB_USER and DB_PASS. 
 
 ### Prerequisites
 - Oracle SQL Database instance
